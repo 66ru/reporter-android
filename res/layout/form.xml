@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DefTheme"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:gravity="center"
+    android:background ="#93B700"
+    android:orientation="vertical" >
+
+    <EditText
+        android:id="@+id/editText1"
+        style="@style/InputText"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:layout_weight="0.02"
+        android:hint="@string/title"
+        android:inputType="text" >
+
+        <requestFocus />
+    </EditText>
+
+    <EditText
+        android:id="@+id/editText2"
+        style="@style/InputText"
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_weight="0.5"
+        android:hint="@string/type_text"
+        android:inputType="textMultiLine" />
+
+    <CheckBox
+        android:id="@+id/add_geo"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:gravity="center|right"
+        android:text="@string/add_geo" />
+
+    <Gallery
+        android:id="@+id/gallery"
+        android:layout_width="fill_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="5dp"
+        android:visibility="gone"
+        android:layout_weight="0.11" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <Button
+            android:id="@+id/submit"
+            android:layout_width="0dip"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:text="@string/submit" />
+
+        <ImageButton
+            android:id="@+id/add_photo"
+            android:layout_width="60dip"
+            android:layout_height="fill_parent"
+            android:contentDescription="@string/add_img"
+            android:src="@android:drawable/ic_input_add" />
+
+    </LinearLayout>
+
+</LinearLayout>

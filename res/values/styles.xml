@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DefTheme" parent="@android:style/Theme.Black.NoTitleBar">
+
+    </style>
+    
+	<style name="SmallText" parent="DefTheme">
+
+	</style>
+
+	<style name="InputText" parent="DefTheme">
+		<item name="android:background">@drawable/input_bg</item>
+	</style>
+	
+	<declare-styleable name="DefTheme">
+        <attr name="android:galleryItemBackground" />
+    </declare-styleable>
+</resources>

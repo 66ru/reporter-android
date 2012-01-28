@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="hello">Hello World, ReporterActivity!</string>
+	<string name="app_name">Reporter</string>
+	<string name="title">Заголовок</string>
+
+
+	<string name="feedbacktype1">Praise</string>
+	<string name="feedbacktype2">Gripe</string>
+	<string name="feedbacktype3">Suggestion</string>
+	<string name="feedbacktype4">Bug</string>
+	<string-array name="feedbacktypelist">
+		<item>@string/feedbacktype1</item>
+		<item>@string/feedbacktype2</item>
+		<item>@string/feedbacktype3</item>
+		<item>@string/feedbacktype4</item>
+	</string-array>
+	<string name="submit">Отправить</string>
+	<string name="add_img">Добавить изображения</string>
+	<string name="add_geo">Добавить моё местоположение</string>
+	<string name="type_text">Введите сообщение</string>
+	
+	<string name="menu_exit">Выход</string>
+</resources>
