@@ -54,7 +54,6 @@ public class ReporterActivity extends Activity implements LocationListener {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		// galleryItems.add("button");
 		setContentView(R.layout.form);
 		// Initialize activity.
 
@@ -127,10 +126,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	// select intents for media append
 	protected void onAppend() {
-		// new
-		// AlertDialog.Builder(this).setTitle("Argh").setMessage("Watch out!").setNeutralButton("Close",
-		// null).show();
-		final CharSequence[] items = { "Фото из галереи", "Открыть камеру" };
+		final CharSequence[] items = { "Фото из галереи"/*, "Открыть камеру"*/ };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Добавить:");
@@ -333,7 +329,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 
-		// Group ID
+/*		// Group ID
 		int groupId = 0;
 		// Unique menu item identifier. Used for event handling.
 		int menuItemId = MENU_EXIT;
@@ -347,10 +343,10 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 		menuItem.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem _menuItem) {
-
+				
 				return true;
 			}
-		});
+		});*/
 
 		return true;
 	}

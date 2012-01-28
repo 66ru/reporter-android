@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-	<string name="hello">Hello World, ReporterActivity!</string>
-	<string name="app_name">Reporter</string>
+	<string name="app_name">66.ru - Мобильный репортер</string>
 	<string name="title">Заголовок</string>
 
 

@@ -8,8 +8,16 @@
 
 	</style>
 
-	<style name="InputText" parent="DefTheme">
+	<style name="InputMargin" parent="DefTheme">
+		<item name="android:layout_marginLeft">5dp</item>
+		<item name="android:layout_marginRight">5dp</item>
+		<item name="android:layout_marginBottom">5dp</item>
+	</style>
+	<style name="InputText" parent="InputMargin">
 		<item name="android:background">@drawable/input_bg</item>
+	</style>
+	<style name="InputCheckBox" parent="InputMargin">
+		
 	</style>
 	
 	<declare-styleable name="DefTheme">
