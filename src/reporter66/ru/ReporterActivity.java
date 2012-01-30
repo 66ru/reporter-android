@@ -188,7 +188,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 		if (galleryItems.size() < 1) {
 			gallery.setVisibility(View.GONE);
 		} else {
-			gallery.setAdapter(imageAdapter);
+			imageAdapter.checkUi();
+			//gallery.setAdapter(imageAdapter);
 		}
 		Toast.makeText(ReporterActivity.this, "Удалено", Toast.LENGTH_SHORT)
 				.show();
@@ -201,7 +202,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 			if (resultCode == Activity.RESULT_OK) {
 				Uri selectedImageUri = data.getData();
 				galleryItems.add(selectedImageUri);
-				gallery.setAdapter(imageAdapter);
+				//gallery.setAdapter(imageAdapter);
+				imageAdapter.checkUi();
 				gallery.setVisibility(View.VISIBLE);
 			}
 			break;
@@ -225,7 +227,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				Log.i("logMarker", "File found " + u.toString());
 				
 				galleryItems.add(u);
-				gallery.setAdapter(imageAdapter);
+				//gallery.setAdapter(imageAdapter);
+				imageAdapter.checkUi();
 				gallery.setVisibility(View.VISIBLE);
 			}
 			break;
@@ -374,6 +377,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 		public long getItemId(int position) {
 			return position;
+		}
+		public void checkUi(){
+			notifyDataSetChanged();
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
