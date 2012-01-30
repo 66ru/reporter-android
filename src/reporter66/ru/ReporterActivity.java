@@ -1,7 +1,11 @@
 package reporter66.ru;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,12 +16,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.TypedArray;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -57,31 +65,35 @@ public class ReporterActivity extends Activity implements LocationListener {
 		setContentView(R.layout.form);
 		// Initialize activity.
 
-		gallery = (Gallery) findViewById(R.id.gallery);
-		imageAdapter = new ImageAdapter(this);
-		gallery.setAdapter(imageAdapter);
+		if (gallery == null) {
+			gallery = (Gallery) findViewById(R.id.gallery);
+			if (imageAdapter == null)
+				imageAdapter = new ImageAdapter(this);
+			gallery.setAdapter(imageAdapter);
 
-		gallery.setOnItemClickListener(new OnItemClickListener() {
-			public void onItemClick(AdapterView parent, View v, int position,
-					long id) {
-				onGalleryItemClick(position);
-			}
-		});
-
-		submit = (Button) findViewById(R.id.submit);
-		submit.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View v) {
-				onSubmit();
-			}
-		});
-
-		add_photo = (ImageButton) findViewById(R.id.add_photo);
-		add_photo.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View v) {
-				onAppend();
-			}
-		});
-
+			gallery.setOnItemClickListener(new OnItemClickListener() {
+				public void onItemClick(AdapterView parent, View v,
+						int position, long id) {
+					onGalleryItemClick(position);
+				}
+			});
+		}
+		if (submit == null) {
+			submit = (Button) findViewById(R.id.submit);
+			submit.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View v) {
+					onSubmit();
+				}
+			});
+		}
+		if (add_photo == null) {
+			add_photo = (ImageButton) findViewById(R.id.add_photo);
+			add_photo.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View v) {
+					onAppend();
+				}
+			});
+		}
 	}
 
 	// data submit
@@ -126,7 +138,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	// select intents for media append
 	protected void onAppend() {
-		final CharSequence[] items = { "Фото из галереи"/*, "Открыть камеру"*/ };
+		final CharSequence[] items = { "Фото из галереи"/* , "Открыть камеру" */};
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Добавить:");
@@ -189,7 +201,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 			gallery.setVisibility(View.GONE);
 		} else {
 			imageAdapter.checkUi();
-			//gallery.setAdapter(imageAdapter);
+			// gallery.setAdapter(imageAdapter);
 		}
 		Toast.makeText(ReporterActivity.this, "Удалено", Toast.LENGTH_SHORT)
 				.show();
@@ -202,7 +214,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 			if (resultCode == Activity.RESULT_OK) {
 				Uri selectedImageUri = data.getData();
 				galleryItems.add(selectedImageUri);
-				//gallery.setAdapter(imageAdapter);
+				// gallery.setAdapter(imageAdapter);
 				imageAdapter.checkUi();
 				gallery.setVisibility(View.VISIBLE);
 			}
@@ -223,11 +235,12 @@ public class ReporterActivity extends Activity implements LocationListener {
 				}
 			} else {
 				u = data.getData();
-				Toast.makeText(ReporterActivity.this, "uri is:" + u.toString(), Toast.LENGTH_LONG).show();
+				Toast.makeText(ReporterActivity.this, "uri is:" + u.toString(),
+						Toast.LENGTH_LONG).show();
 				Log.i("logMarker", "File found " + u.toString());
-				
+
 				galleryItems.add(u);
-				//gallery.setAdapter(imageAdapter);
+				// gallery.setAdapter(imageAdapter);
 				imageAdapter.checkUi();
 				gallery.setVisibility(View.VISIBLE);
 			}
@@ -327,29 +340,25 @@ public class ReporterActivity extends Activity implements LocationListener {
 	}
 
 	static final private int MENU_EXIT = Menu.FIRST;
+	private static final int THUMBNAIL_SIZE = 150;
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 
-/*		// Group ID
-		int groupId = 0;
-		// Unique menu item identifier. Used for event handling.
-		int menuItemId = MENU_EXIT;
-		// The order position of the item
-		int menuItemOrder = Menu.NONE;
-		// Text to be displayed for this menu item.
-		int menuItemText = R.string.menu_exit;
-		// Create the menu item and keep a reference to it.
-		MenuItem menuItem = menu.add(groupId, menuItemId, menuItemOrder,
-				menuItemText);
-
-		menuItem.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-			public boolean onMenuItemClick(MenuItem _menuItem) {
-				
-				return true;
-			}
-		});*/
+		/*
+		 * // Group ID int groupId = 0; // Unique menu item identifier. Used for
+		 * event handling. int menuItemId = MENU_EXIT; // The order position of
+		 * the item int menuItemOrder = Menu.NONE; // Text to be displayed for
+		 * this menu item. int menuItemText = R.string.menu_exit; // Create the
+		 * menu item and keep a reference to it. MenuItem menuItem =
+		 * menu.add(groupId, menuItemId, menuItemOrder, menuItemText);
+		 * 
+		 * menuItem.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+		 * public boolean onMenuItemClick(MenuItem _menuItem) {
+		 * 
+		 * return true; } });
+		 */
 
 		return true;
 	}
@@ -378,7 +387,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 		public long getItemId(int position) {
 			return position;
 		}
-		public void checkUi(){
+
+		public void checkUi() {
 			notifyDataSetChanged();
 		}
 
@@ -386,8 +396,11 @@ public class ReporterActivity extends Activity implements LocationListener {
 			ImageView imageView = new ImageView(mContext);
 
 			Uri uri = galleryItems.get(position);
+			Bitmap img = decodeFile(uri);
+			// Log.i("img",img.toString());
 
-			imageView.setImageURI(uri);
+			// imageView.setImageURI(img);
+			imageView.setImageBitmap(img);
 			imageView.setLayoutParams(new Gallery.LayoutParams(150, -1));
 			imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 			imageView.setAdjustViewBounds(true);
@@ -395,6 +408,48 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 			return imageView;
 		}
+	}
+
+	private Bitmap decodeFile(Uri uri) {
+
+		File f = new File(getRealPathFromURI(uri));
+		// Decode image size
+		BitmapFactory.Options o = new BitmapFactory.Options();
+		o.inJustDecodeBounds = true;
+		try {
+			BitmapFactory.decodeStream(new FileInputStream(f), null, o);
+		} catch (FileNotFoundException e) {
+			Log.e("img", "File not found " + getRealPathFromURI(uri));
+			e.printStackTrace();
+		}
+
+		// The new size we want to scale to
+		final int REQUIRED_SIZE = 100;
+
+		// Find the correct scale value. It should be the power of 2.
+		int width_tmp = o.outWidth, height_tmp = o.outHeight;
+		int scale = 1;
+
+		while (true) {
+			if (width_tmp / 2 < REQUIRED_SIZE || height_tmp / 2 < REQUIRED_SIZE)
+				break;
+			width_tmp /= 2;
+			height_tmp /= 2;
+			scale *= 2;
+		}
+
+		// Decode with inSampleSize
+		BitmapFactory.Options o2 = new BitmapFactory.Options();
+		o2.inSampleSize = scale;
+
+		try {
+			return BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
+		} catch (FileNotFoundException e) {
+			Log.e("img", "File not found");
+			e.printStackTrace();
+		}
+
+		return null;
 	}
 
 	@Override
@@ -407,6 +462,22 @@ public class ReporterActivity extends Activity implements LocationListener {
 	public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
 		// TODO Auto-generated method stub
 
+	}
+
+	public String getRealPathFromURI(Uri contentUri) {
+
+		// can post image
+		String[] proj = { MediaStore.Images.Media.DATA };
+		Cursor cursor = managedQuery(contentUri, proj, // Which columns to
+														// return
+				null, // WHERE clause; which rows to return (all rows)
+				null, // WHERE clause selection arguments (none)
+				null); // Order-by clause (ascending by name)
+		int column_index = cursor
+				.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+		cursor.moveToFirst();
+
+		return cursor.getString(column_index);
 	}
 
 	public boolean hasImageCaptureBug() {

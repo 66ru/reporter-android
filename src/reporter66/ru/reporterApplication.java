@@ -1,26 +1,24 @@
 package reporter66.ru;
 
 import android.app.Application;
-import android.content.Context;
 import android.content.res.Configuration;
 
 public class reporterApplication extends Application {
 
-	//private static reporterApplication singleton;
-	private static Context context;
+	private static reporterApplication singleton = null;
 	
-	/*public static reporterApplication getInstance() {
+	public static synchronized reporterApplication getInstance() {
+		if (singleton == null) {
+			singleton = new reporterApplication();
+		}
 		return singleton;
-	}*/
-	public static Context getContext() {
-		return context;
 	}
 
 	@Override
 	public final void onCreate() 
 	{
-		//super.onCreate();
-		context = this;
+		super.onCreate();
+		singleton = this;
 	}
 
 	@Override
