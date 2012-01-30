@@ -6,7 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import android.app.Activity;
@@ -26,6 +28,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
@@ -44,7 +47,10 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 public class ReporterActivity extends Activity implements LocationListener {
-
+	
+	//intents codes
+	private static final int THUMBNAIL_SIZE = 1;
+	
 	// geo
 	private LocationManager locationManager;
 	private String provider;
@@ -55,7 +61,15 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private ProgressDialog dialog;
 	private ImageButton add_photo;
 	// media
+	public static final int MEDIA_TYPE_IMAGE = 1;
+	public static final int MEDIA_TYPE_VIDEO = 2;
+	
 	private ImageAdapter imageAdapter;
+	private static final int INTENT_IMAGE_PICK = 1;
+	
+	private static final int INTENT_IMAGE_CAPTURE = 2;
+	private Uri ImageCaptureUri;
+	
 	private Gallery gallery;
 	private List<Uri> galleryItems = new ArrayList<Uri>();
 
@@ -139,7 +153,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	// select intents for media append
 	protected void onAppend() {
-		final CharSequence[] items = { "Фото из галереи"/* , "Открыть камеру" */};
+		final CharSequence[] items = { "Фото из галереи" , "Открыть камеру" };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Добавить:");
@@ -151,26 +165,63 @@ public class ReporterActivity extends Activity implements LocationListener {
 					intent.setType("image/*");
 					intent.setAction(Intent.ACTION_GET_CONTENT);
 					startActivityForResult(Intent.createChooser(intent,
-							"Выберите изображение"), 1);
+							"Выберите изображение"), INTENT_IMAGE_PICK);
 					break;
 				case 1:
-					Intent i = new Intent(
-							android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+					Intent CaptureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+					ImageCaptureUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
 					if (hasImageCaptureBug()) {
-						i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT,
-								Uri.fromFile(new File("/sdcard/tmp")));
+						CaptureIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File("/sdcard/tmp")));
 					} else {
-						i.putExtra(
-								android.provider.MediaStore.EXTRA_OUTPUT,
-								android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+						CaptureIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 					}
-					startActivityForResult(i, 2);
+					//CaptureIntent.putExtra(MediaStore.EXTRA_OUTPUT,ImageCaptureUri);
+					Log.i("ImageCaptureUri", ImageCaptureUri.toString());
+					startActivityForResult(CaptureIntent, INTENT_IMAGE_CAPTURE);
 					break;
 				}
 			}
 		});
 		AlertDialog alert = builder.create();
 		alert.show();
+	}
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch (requestCode) {
+		case INTENT_IMAGE_PICK:
+			if (resultCode == Activity.RESULT_OK) {
+				Uri selectedImageUri = data.getData();
+				galleryItems.add(selectedImageUri);
+				// gallery.setAdapter(imageAdapter);
+				imageAdapter.checkUi();
+				gallery.setVisibility(View.VISIBLE);
+			}
+			break;
+		case INTENT_IMAGE_CAPTURE:
+			 Uri u;
+             if (hasImageCaptureBug()) {
+                 File fi = new File("/sdcard/tmp");
+                 try {
+                     u = Uri.parse(android.provider.MediaStore.Images.Media.insertImage(getContentResolver(), fi.getAbsolutePath(), null, null));
+                     Log.i("bug_img",u.toString());
+                     galleryItems.add(u);
+                     imageAdapter.checkUi();
+                     if (!fi.delete()) {
+                         Log.i("logMarker", "Failed to delete " + fi);
+                     }
+                 } catch (FileNotFoundException e) {
+                     e.printStackTrace();
+                 }
+             } else {
+                if(data != null) {
+                	u = data.getData();
+                	Log.i("no_img",u.toString());
+                	galleryItems.add(u);
+                	imageAdapter.checkUi();
+                }
+            }
+			break;
+		}
 	}
 
 	protected void onGalleryItemClick(final int position) {
@@ -208,46 +259,6 @@ public class ReporterActivity extends Activity implements LocationListener {
 				.show();
 	}
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch (requestCode) {
-		case 1:
-			if (resultCode == Activity.RESULT_OK) {
-				Uri selectedImageUri = data.getData();
-				galleryItems.add(selectedImageUri);
-				// gallery.setAdapter(imageAdapter);
-				imageAdapter.checkUi();
-				gallery.setVisibility(View.VISIBLE);
-			}
-			break;
-		case 2:
-			Uri u;
-			if (hasImageCaptureBug()) {
-				File fi = new File("/sdcard/tmp");
-				try {
-					u = Uri.parse(android.provider.MediaStore.Images.Media
-							.insertImage(getContentResolver(),
-									fi.getAbsolutePath(), null, null));
-					if (!fi.delete()) {
-						Log.i("logMarker", "Failed to delete " + fi);
-					}
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				}
-			} else {
-				u = data.getData();
-				Toast.makeText(ReporterActivity.this, "uri is:" + u.toString(),
-						Toast.LENGTH_LONG).show();
-				Log.i("logMarker", "File found " + u.toString());
-
-				galleryItems.add(u);
-				// gallery.setAdapter(imageAdapter);
-				imageAdapter.checkUi();
-				gallery.setVisibility(View.VISIBLE);
-			}
-			break;
-		}
-	}
 
 	// Called after onCreate has finished, use to restore UI state
 	@Override
@@ -351,8 +362,6 @@ public class ReporterActivity extends Activity implements LocationListener {
 	}
 
 	static final private int MENU_EXIT = Menu.FIRST;
-	private static final int THUMBNAIL_SIZE = 150;
-
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
@@ -503,6 +512,42 @@ public class ReporterActivity extends Activity implements LocationListener {
 		return devices.contains(android.os.Build.BRAND + "/"
 				+ android.os.Build.PRODUCT + "/" + android.os.Build.DEVICE);
 
+	}
+	/** Create a file Uri for saving an image or video */
+	private static Uri getOutputMediaFileUri(int type){
+	      return Uri.fromFile(getOutputMediaFile(type));
+	}
+
+	/** Create a File for saving an image or video */
+	private static File getOutputMediaFile(int type){
+	    // To be safe, you should check that the SDCard is mounted
+	    // using Environment.getExternalStorageState() before doing this.
+
+	    File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "MyCameraApp");
+	    // This location works best if you want the created images to be shared
+	    // between applications and persist after your app has been uninstalled.
+
+	    // Create the storage directory if it does not exist
+	    if (! mediaStorageDir.exists()){
+	        if (! mediaStorageDir.mkdirs()){
+	            Log.d("MyCameraApp", "failed to create directory");
+	            return null;
+	        }
+	    }
+
+	    // Create a media file name
+	    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+	    File mediaFile;
+	    if (type == MEDIA_TYPE_IMAGE){
+	        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+	        "IMG_"+ timeStamp + ".jpg");
+	    } else if(type == MEDIA_TYPE_VIDEO) {
+	        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+	        "VID_"+ timeStamp + ".mp4");
+	    } else {
+	        return null;
+	    }
+	    return mediaFile;
 	}
 
 }
