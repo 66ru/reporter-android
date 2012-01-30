@@ -15,6 +15,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -280,6 +281,16 @@ public class ReporterActivity extends Activity implements LocationListener {
 		// Resume any paused UI updates, threads, or processes required
 		// by the activity but suspended when it was inactive.
 	}
+	public void onConfigurationChanged(Configuration newConfig) {
+	    super.onConfigurationChanged(newConfig);
+	    imageAdapter.checkUi();
+	    // Checks the orientation of the screen
+	    if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+	        //Toast.makeText(this, "landscape "+galleryItems.size(), Toast.LENGTH_SHORT).show();
+	    } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+	        //Toast.makeText(this, "portrait "+galleryItems.size(), Toast.LENGTH_SHORT).show();
+	    }
+	}
 
 	// Called to save UI state changes at the
 	// end of the active lifecycle.
@@ -397,9 +408,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 			Uri uri = galleryItems.get(position);
 			Bitmap img = decodeFile(uri);
-			// Log.i("img",img.toString());
 
-			// imageView.setImageURI(img);
 			imageView.setImageBitmap(img);
 			imageView.setLayoutParams(new Gallery.LayoutParams(150, -1));
 			imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
