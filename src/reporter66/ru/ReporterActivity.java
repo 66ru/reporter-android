@@ -3,9 +3,6 @@ package reporter66.ru;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -47,10 +44,10 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 public class ReporterActivity extends Activity implements LocationListener {
-	
-	//intents codes
+
+	// intents codes
 	private static final int THUMBNAIL_SIZE = 1;
-	
+
 	// geo
 	private LocationManager locationManager;
 	private String provider;
@@ -63,19 +60,21 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// media
 	public static final int MEDIA_TYPE_IMAGE = 1;
 	public static final int MEDIA_TYPE_VIDEO = 2;
-	
+
 	private ImageAdapter imageAdapter;
+	
 	private static final int INTENT_IMAGE_PICK = 1;
-	
 	private static final int INTENT_IMAGE_CAPTURE = 2;
-	private Uri ImageCaptureUri;
 	
+	private Uri ImageCaptureUri;
+
 	private Gallery gallery;
 	private List<Uri> galleryItems = new ArrayList<Uri>();
 
 	// Called at the start of the full lifetime.
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		Log.i("action", "onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.form);
 		// Initialize activity.
@@ -153,7 +152,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	// select intents for media append
 	protected void onAppend() {
-		final CharSequence[] items = { "Фото из галереи" , "Открыть камеру" };
+		final CharSequence[] items = { "Фото из галереи", "Открыть камеру" };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Добавить:");
@@ -168,14 +167,12 @@ public class ReporterActivity extends Activity implements LocationListener {
 							"Выберите изображение"), INTENT_IMAGE_PICK);
 					break;
 				case 1:
-					Intent CaptureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-					ImageCaptureUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
-					if (hasImageCaptureBug()) {
-						CaptureIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File("/sdcard/tmp")));
-					} else {
-						CaptureIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-					}
-					//CaptureIntent.putExtra(MediaStore.EXTRA_OUTPUT,ImageCaptureUri);
+					Intent CaptureIntent = new Intent(
+							MediaStore.ACTION_IMAGE_CAPTURE);
+					ImageCaptureUri = Uri.fromFile(new File(Environment
+							.getExternalStorageDirectory(), "reporter66_temp.jpg"));
+					CaptureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+							ImageCaptureUri);
 					Log.i("ImageCaptureUri", ImageCaptureUri.toString());
 					startActivityForResult(CaptureIntent, INTENT_IMAGE_CAPTURE);
 					break;
@@ -185,41 +182,42 @@ public class ReporterActivity extends Activity implements LocationListener {
 		AlertDialog alert = builder.create();
 		alert.show();
 	}
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		Log.i("action", "onActivityResult");
+		super.onActivityResult(requestCode, resultCode, data);
 		switch (requestCode) {
 		case INTENT_IMAGE_PICK:
 			if (resultCode == Activity.RESULT_OK) {
 				Uri selectedImageUri = data.getData();
 				galleryItems.add(selectedImageUri);
-				// gallery.setAdapter(imageAdapter);
 				imageAdapter.checkUi();
-				gallery.setVisibility(View.VISIBLE);
 			}
 			break;
 		case INTENT_IMAGE_CAPTURE:
-			 Uri u;
-             if (hasImageCaptureBug()) {
-                 File fi = new File("/sdcard/tmp");
-                 try {
-                     u = Uri.parse(android.provider.MediaStore.Images.Media.insertImage(getContentResolver(), fi.getAbsolutePath(), null, null));
-                     Log.i("bug_img",u.toString());
-                     galleryItems.add(u);
-                     imageAdapter.checkUi();
-                     if (!fi.delete()) {
-                         Log.i("logMarker", "Failed to delete " + fi);
-                     }
-                 } catch (FileNotFoundException e) {
-                     e.printStackTrace();
-                 }
-             } else {
-                if(data != null) {
-                	u = data.getData();
-                	Log.i("no_img",u.toString());
-                	galleryItems.add(u);
-                	imageAdapter.checkUi();
-                }
-            }
+			Uri u;
+			if (resultCode == Activity.RESULT_OK) {
+				try {
+					File f = new File(ImageCaptureUri.getPath());
+					u = Uri.parse(android.provider.MediaStore.Images.Media
+							.insertImage(getContentResolver(),
+									f.getAbsolutePath(), null, null));
+					f.delete();
+					Log.i("INTENT_IMAGE_CAPTURE", "Uri: " + u.toString());
+					galleryItems.add(u);
+					imageAdapter.checkUi();
+				} catch (FileNotFoundException e) {
+					Toast.makeText(
+							ReporterActivity.this,
+							"Не удалось получить файл, попробуйте загрузить через галлерею.",
+							Toast.LENGTH_SHORT).show();
+					Log.e("INTENT_IMAGE_CAPTURE", "File not found: "
+							+ ImageCaptureUri.getPath());
+					e.printStackTrace();
+				}
+			} else
+				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
 			break;
 		}
 	}
@@ -249,20 +247,15 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	protected void GalleryItemRemove(int position) {
 		galleryItems.remove(position);
-		if (galleryItems.size() < 1) {
-			gallery.setVisibility(View.GONE);
-		} else {
-			imageAdapter.checkUi();
-			// gallery.setAdapter(imageAdapter);
-		}
+		imageAdapter.checkUi();
 		Toast.makeText(ReporterActivity.this, "Удалено", Toast.LENGTH_SHORT)
 				.show();
 	}
 
-
 	// Called after onCreate has finished, use to restore UI state
 	@Override
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		Log.i("action", "onRestoreIstanceState");
 		super.onRestoreInstanceState(savedInstanceState);
 		// Restore UI state from the savedInstanceState.
 		// This bundle has also been passed to onCreate.
@@ -272,6 +265,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// for an activity process.
 	@Override
 	public void onRestart() {
+		Log.i("action", "onRestart");
 		super.onRestart();
 		// Load changes knowing that the activity has already
 		// been visible within this process.
@@ -280,6 +274,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// Called at the start of the visible lifetime.
 	@Override
 	public void onStart() {
+		Log.i("action", "onStart");
 		super.onStart();
 		// Apply any required UI change now that the Activity is visible.
 	}
@@ -287,26 +282,32 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// Called at the start of the active lifetime.
 	@Override
 	public void onResume() {
+		Log.i("action", "onResume");
 		super.onResume();
 		provider = getProvider();
 		// Resume any paused UI updates, threads, or processes required
 		// by the activity but suspended when it was inactive.
 	}
+
 	public void onConfigurationChanged(Configuration newConfig) {
-	    super.onConfigurationChanged(newConfig);
-	    imageAdapter.checkUi();
-	    // Checks the orientation of the screen
-	    if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-	        //Toast.makeText(this, "landscape "+galleryItems.size(), Toast.LENGTH_SHORT).show();
-	    } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-	        //Toast.makeText(this, "portrait "+galleryItems.size(), Toast.LENGTH_SHORT).show();
-	    }
+		Log.i("action", "onConfigChanged");
+		super.onConfigurationChanged(newConfig);
+		imageAdapter.checkUi();
+		// Checks the orientation of the screen
+		if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+			// Toast.makeText(this, "landscape "+galleryItems.size(),
+			// Toast.LENGTH_SHORT).show();
+		} else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+			// Toast.makeText(this, "portrait "+galleryItems.size(),
+			// Toast.LENGTH_SHORT).show();
+		}
 	}
 
 	// Called to save UI state changes at the
 	// end of the active lifecycle.
 	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
+		Log.i("action", "onSaveInstanceState");
 		// Save UI state changes to the savedInstanceState.
 		// This bundle will be passed to onCreate if the process is
 		// killed and restarted.
@@ -316,6 +317,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// Called at the end of the active lifetime.
 	@Override
 	public void onPause() {
+		Log.i("action", "onPause");
 		// Suspend UI updates, threads, or CPU intensive processes
 		// that don’t need to be updated when the Activity isn’t
 		// the active foreground activity.
@@ -333,6 +335,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	@Override
 	public void onLocationChanged(Location location) {
+		Log.i("action", "onLocationChanged");
 		latitute = location.getLatitude();
 		longitude = location.getLongitude();
 	}
@@ -346,6 +349,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// Called at the end of the visible lifetime.
 	@Override
 	public void onStop() {
+		Log.i("action", "onStop");
 		// Suspend remaining UI updates, threads, or processing
 		// that aren’t required when the Activity isn’t visible.
 		// Persist all edits or state changes
@@ -356,12 +360,14 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// Called at the end of the full lifetime.
 	@Override
 	public void onDestroy() {
+		Log.i("action", "onDestroy");
 		// Clean up any resources including ending threads,
 		// closing database connections etc.
 		super.onDestroy();
 	}
 
 	static final private int MENU_EXIT = Menu.FIRST;
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
@@ -409,7 +415,12 @@ public class ReporterActivity extends Activity implements LocationListener {
 		}
 
 		public void checkUi() {
-			notifyDataSetChanged();
+			Log.i("action", "checkUI");
+			if (galleryItems.size() > 0) {
+				gallery.setVisibility(View.VISIBLE);
+				notifyDataSetChanged();
+			} else
+				gallery.setVisibility(View.GONE);
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
@@ -497,57 +508,4 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 		return cursor.getString(column_index);
 	}
-
-	public boolean hasImageCaptureBug() {
-
-		// list of known devices that have the bug
-		ArrayList<String> devices = new ArrayList<String>();
-		devices.add("android-devphone1/dream_devphone/dream");
-		devices.add("generic/sdk/generic");
-		devices.add("vodafone/vfpioneer/sapphire");
-		devices.add("tmobile/kila/dream");
-		devices.add("verizon/voles/sholes");
-		devices.add("google_ion/google_ion/sapphire");
-
-		return devices.contains(android.os.Build.BRAND + "/"
-				+ android.os.Build.PRODUCT + "/" + android.os.Build.DEVICE);
-
-	}
-	/** Create a file Uri for saving an image or video */
-	private static Uri getOutputMediaFileUri(int type){
-	      return Uri.fromFile(getOutputMediaFile(type));
-	}
-
-	/** Create a File for saving an image or video */
-	private static File getOutputMediaFile(int type){
-	    // To be safe, you should check that the SDCard is mounted
-	    // using Environment.getExternalStorageState() before doing this.
-
-	    File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "MyCameraApp");
-	    // This location works best if you want the created images to be shared
-	    // between applications and persist after your app has been uninstalled.
-
-	    // Create the storage directory if it does not exist
-	    if (! mediaStorageDir.exists()){
-	        if (! mediaStorageDir.mkdirs()){
-	            Log.d("MyCameraApp", "failed to create directory");
-	            return null;
-	        }
-	    }
-
-	    // Create a media file name
-	    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-	    File mediaFile;
-	    if (type == MEDIA_TYPE_IMAGE){
-	        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-	        "IMG_"+ timeStamp + ".jpg");
-	    } else if(type == MEDIA_TYPE_VIDEO) {
-	        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-	        "VID_"+ timeStamp + ".mp4");
-	    } else {
-	        return null;
-	    }
-	    return mediaFile;
-	}
-
 }
