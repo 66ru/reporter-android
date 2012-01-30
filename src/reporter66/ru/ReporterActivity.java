@@ -45,31 +45,29 @@ import android.widget.Toast;
 
 public class ReporterActivity extends Activity implements LocationListener {
 
-	// intents codes
-	private static final int THUMBNAIL_SIZE = 1;
+	/*			intents codes			*/
+	private static final int INTENT_IMAGE_PICK = 1;
+	private static final int INTENT_IMAGE_CAPTURE = 2;
 
-	// geo
+	/*			geo			*/
 	private LocationManager locationManager;
 	private String provider;
 	private double longitude;
 	private double latitute;
-	// elements
+	
+	/*			elements			*/
 	private Button submit;
 	private ProgressDialog dialog;
 	private ImageButton add_photo;
-	// media
-	public static final int MEDIA_TYPE_IMAGE = 1;
-	public static final int MEDIA_TYPE_VIDEO = 2;
+	
+	/*			media			*/
+	private static final int THUMBNAIL_SIZE = 150;
 
 	private ImageAdapter imageAdapter;
-	
-	private static final int INTENT_IMAGE_PICK = 1;
-	private static final int INTENT_IMAGE_CAPTURE = 2;
-	
-	private Uri ImageCaptureUri;
-
 	private Gallery gallery;
 	private List<Uri> galleryItems = new ArrayList<Uri>();
+	
+	private Uri ImageCaptureUri;
 
 	// Called at the start of the full lifetime.
 	@Override
@@ -427,7 +425,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 			ImageView imageView = new ImageView(mContext);
 
 			Uri uri = galleryItems.get(position);
-			Bitmap img = decodeFile(uri);
+			Bitmap img = decodeImageFile(uri);
 
 			imageView.setImageBitmap(img);
 			imageView.setLayoutParams(new Gallery.LayoutParams(150, -1));
@@ -439,7 +437,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 		}
 	}
 
-	private Bitmap decodeFile(Uri uri) {
+	private Bitmap decodeImageFile(Uri uri) {
 
 		File f = new File(getRealPathFromURI(uri));
 		// Decode image size
@@ -448,19 +446,16 @@ public class ReporterActivity extends Activity implements LocationListener {
 		try {
 			BitmapFactory.decodeStream(new FileInputStream(f), null, o);
 		} catch (FileNotFoundException e) {
-			Log.e("img", "File not found " + getRealPathFromURI(uri));
+			Log.e("decodeImageFile", "File not found " + getRealPathFromURI(uri));
 			e.printStackTrace();
 		}
-
-		// The new size we want to scale to
-		final int REQUIRED_SIZE = 100;
 
 		// Find the correct scale value. It should be the power of 2.
 		int width_tmp = o.outWidth, height_tmp = o.outHeight;
 		int scale = 1;
 
 		while (true) {
-			if (width_tmp / 2 < REQUIRED_SIZE || height_tmp / 2 < REQUIRED_SIZE)
+			if (width_tmp / 2 < THUMBNAIL_SIZE || height_tmp / 2 < THUMBNAIL_SIZE)
 				break;
 			width_tmp /= 2;
 			height_tmp /= 2;
@@ -474,7 +469,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 		try {
 			return BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
 		} catch (FileNotFoundException e) {
-			Log.e("img", "File not found");
+			Log.e("decodeImageFile", "File not found");
 			e.printStackTrace();
 		}
 
