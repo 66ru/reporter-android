@@ -45,28 +45,28 @@ import android.widget.Toast;
 
 public class ReporterActivity extends Activity implements LocationListener {
 
-	/*			intents codes			*/
+	/* intents codes */
 	private static final int INTENT_IMAGE_PICK = 1;
 	private static final int INTENT_IMAGE_CAPTURE = 2;
 
-	/*			geo			*/
+	/* geo */
 	private LocationManager locationManager;
 	private String provider;
 	private double longitude;
 	private double latitute;
-	
-	/*			elements			*/
+
+	/* elements */
 	private Button submit;
 	private ProgressDialog dialog;
 	private ImageButton add_photo;
-	
-	/*			media			*/
+
+	/* media */
 	private static final int THUMBNAIL_SIZE = 150;
 
 	private ImageAdapter imageAdapter;
 	private Gallery gallery;
 	private List<Uri> galleryItems = new ArrayList<Uri>();
-	
+
 	private Uri ImageCaptureUri;
 
 	// Called at the start of the full lifetime.
@@ -168,7 +168,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 					Intent CaptureIntent = new Intent(
 							MediaStore.ACTION_IMAGE_CAPTURE);
 					ImageCaptureUri = Uri.fromFile(new File(Environment
-							.getExternalStorageDirectory(), "reporter66_temp.jpg"));
+							.getExternalStorageDirectory(),
+							"reporter66_temp.jpg"));
 					CaptureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
 							ImageCaptureUri);
 					Log.i("ImageCaptureUri", ImageCaptureUri.toString());
@@ -426,14 +427,16 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 			Uri uri = galleryItems.get(position);
 			Bitmap img = decodeImageFile(uri);
+			if (img != null) {
+				imageView.setImageBitmap(img);
+				imageView.setLayoutParams(new Gallery.LayoutParams(185, 150));
+				imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+				imageView.setAdjustViewBounds(true);
+				imageView.setBackgroundResource(mGalleryItemBackground);
 
-			imageView.setImageBitmap(img);
-			imageView.setLayoutParams(new Gallery.LayoutParams(150, -1));
-			imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-			imageView.setAdjustViewBounds(true);
-			imageView.setBackgroundResource(mGalleryItemBackground);
-
-			return imageView;
+				return imageView;
+			} else
+				return null;
 		}
 	}
 
@@ -446,7 +449,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 		try {
 			BitmapFactory.decodeStream(new FileInputStream(f), null, o);
 		} catch (FileNotFoundException e) {
-			Log.e("decodeImageFile", "File not found " + getRealPathFromURI(uri));
+			Log.e("decodeImageFile", "File not found "
+					+ getRealPathFromURI(uri));
 			e.printStackTrace();
 		}
 
@@ -455,7 +459,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 		int scale = 1;
 
 		while (true) {
-			if (width_tmp / 2 < THUMBNAIL_SIZE || height_tmp / 2 < THUMBNAIL_SIZE)
+			if (width_tmp / 2 < THUMBNAIL_SIZE
+					|| height_tmp / 2 < THUMBNAIL_SIZE)
 				break;
 			width_tmp /= 2;
 			height_tmp /= 2;
