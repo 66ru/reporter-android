@@ -183,7 +183,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// select intents for media append
 	protected void onAppend() {
 		final CharSequence[] items = { "Фото из галереи", "Сделать фото",
-				"Видео из галереи" };
+				"Видео из галереи", "Снять видео" };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Добавить:");
@@ -216,7 +216,15 @@ public class ReporterActivity extends Activity implements LocationListener {
 							Intent.createChooser(VideoIntent, "Выберите ролик"),
 							INTENT_VIDEO_PICK);
 					break;
+				case 3:
+					Intent VideoCaptureIntent = new Intent();
+					VideoCaptureIntent
+							.setAction(MediaStore.ACTION_VIDEO_CAPTURE);
+					startActivityForResult(VideoCaptureIntent,
+							INTENT_VIDEO_CAPTURE);
+					break;
 				}
+
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -266,6 +274,23 @@ public class ReporterActivity extends Activity implements LocationListener {
 							+ ImageCaptureUri.getPath());
 					e.printStackTrace();
 				}
+			} else
+				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
+			break;
+		case INTENT_VIDEO_CAPTURE:
+			if (resultCode == Activity.RESULT_OK) {
+				if(data != null){
+					Uri newVideoUri = data.getData();
+					if(newVideoUri != null) {
+						galleryItems.add(new galleryItem(newVideoUri,TYPE_VIDEO));
+						imageAdapter.checkUi();
+					} else {
+						Log.i("INTENT_IMAGE_CAPTURE", "data returned no uri");
+					}
+				} else {
+					Log.i("INTENT_IMAGE_CAPTURE", "data is null");
+				}
+				
 			} else
 				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
 			break;
