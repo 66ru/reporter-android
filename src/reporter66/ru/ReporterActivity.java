@@ -3,14 +3,13 @@ package reporter66.ru;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -49,6 +48,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private static final int INTENT_IMAGE_PICK = 1;
 	private static final int INTENT_IMAGE_CAPTURE = 2;
 
+	private static final int INTENT_VIDEO_PICK = 11;
+	private static final int INTENT_VIDEO_CAPTURE = 12;
+
 	/* geo */
 	private LocationManager locationManager;
 	private String provider;
@@ -65,9 +67,39 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	private ImageAdapter imageAdapter;
 	private Gallery gallery;
-	private List<Uri> galleryItems = new ArrayList<Uri>();
+	private List<galleryItem> galleryItems = new ArrayList<galleryItem>();
 
 	private Uri ImageCaptureUri;
+
+	private static final int TYPE_IMAGE = 0;
+	private static final int TYPE_VIDEO = 1;
+
+	public class galleryItem {
+
+		private Uri uri;
+		private int type;
+
+		public Uri getUri() {
+			return uri;
+		}
+
+		public void setUri(Uri uri) {
+			this.uri = uri;
+		}
+
+		public int getType() {
+			return type;
+		}
+
+		public void setType(int type) {
+			this.type = type;
+		}
+
+		public galleryItem(Uri uri, int type) {
+			this.uri = uri;
+			this.type = type;
+		}
+	}
 
 	// Called at the start of the full lifetime.
 	@Override
@@ -150,7 +182,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	// select intents for media append
 	protected void onAppend() {
-		final CharSequence[] items = { "Фото из галереи", "Открыть камеру" };
+		final CharSequence[] items = { "Фото из галереи", "Сделать фото",
+				"Видео из галереи" };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Добавить:");
@@ -175,6 +208,14 @@ public class ReporterActivity extends Activity implements LocationListener {
 					Log.i("ImageCaptureUri", ImageCaptureUri.toString());
 					startActivityForResult(CaptureIntent, INTENT_IMAGE_CAPTURE);
 					break;
+				case 2:
+					Intent VideoIntent = new Intent();
+					VideoIntent.setType("video/*");
+					VideoIntent.setAction(Intent.ACTION_GET_CONTENT);
+					startActivityForResult(
+							Intent.createChooser(VideoIntent, "Выберите ролик"),
+							INTENT_VIDEO_PICK);
+					break;
 				}
 			}
 		});
@@ -190,10 +231,20 @@ public class ReporterActivity extends Activity implements LocationListener {
 		case INTENT_IMAGE_PICK:
 			if (resultCode == Activity.RESULT_OK) {
 				Uri selectedImageUri = data.getData();
-				galleryItems.add(selectedImageUri);
+				galleryItems.add(new galleryItem(selectedImageUri, TYPE_IMAGE));
 				imageAdapter.checkUi();
 			}
 			break;
+		case INTENT_VIDEO_PICK:
+			if (resultCode == Activity.RESULT_OK) {
+				Uri selectedVideoUri = data.getData();
+				Log.i("INTENT_VIDEO_PICK",
+						"Selected uri: " + selectedVideoUri.toString());
+				galleryItems.add(new galleryItem(selectedVideoUri, TYPE_VIDEO));
+				imageAdapter.checkUi();
+			}
+			break;
+
 		case INTENT_IMAGE_CAPTURE:
 			Uri u;
 			if (resultCode == Activity.RESULT_OK) {
@@ -204,7 +255,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 									f.getAbsolutePath(), null, null));
 					f.delete();
 					Log.i("INTENT_IMAGE_CAPTURE", "Uri: " + u.toString());
-					galleryItems.add(u);
+					galleryItems.add(new galleryItem(u, TYPE_IMAGE));
 					imageAdapter.checkUi();
 				} catch (FileNotFoundException e) {
 					Toast.makeText(
@@ -231,7 +282,17 @@ public class ReporterActivity extends Activity implements LocationListener {
 				case 0:
 					Intent intent = new Intent();
 					intent.setAction(android.content.Intent.ACTION_VIEW);
-					intent.setDataAndType(galleryItems.get(position), "image/*");
+					galleryItem curItem = galleryItems.get(position);
+					String mime = "*/*";
+					switch (curItem.getType()) {
+					case TYPE_IMAGE:
+						mime = "image/*";
+						break;
+					case TYPE_VIDEO:
+						mime = "video/*";
+						break;
+					}
+					intent.setDataAndType(curItem.getUri(), mime);
 					startActivity(intent);
 					break;
 				case 1:
@@ -426,18 +487,47 @@ public class ReporterActivity extends Activity implements LocationListener {
 		public View getView(int position, View convertView, ViewGroup parent) {
 			ImageView imageView = new ImageView(mContext);
 
-			Uri uri = galleryItems.get(position);
-			Bitmap img = decodeImageFile(uri);
-			if (img != null) {
-				imageView.setImageBitmap(img);
-				imageView.setLayoutParams(new Gallery.LayoutParams(185, 150));
-				imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-				imageView.setAdjustViewBounds(true);
-				imageView.setBackgroundResource(mGalleryItemBackground);
+			galleryItem item = galleryItems.get(position);
+			switch (item.getType()) {
+			case TYPE_IMAGE:
+				Bitmap img = decodeImageFile(item.getUri());
+				if (img != null) {
+					imageView.setImageBitmap(img);
+					imageView
+							.setLayoutParams(new Gallery.LayoutParams(185, 150));
+					imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+					imageView.setAdjustViewBounds(true);
+					imageView.setBackgroundResource(mGalleryItemBackground);
 
-				return imageView;
-			} else
-				return null;
+					return imageView;
+				}
+				break;
+			case TYPE_VIDEO:
+				int fileID = Integer.parseInt(item.getUri()
+						.getLastPathSegment());
+				ContentResolver crThumb = getContentResolver();
+				BitmapFactory.Options options = new BitmapFactory.Options();
+				options.inSampleSize = 1;
+				Bitmap curThumb = MediaStore.Video.Thumbnails.getThumbnail(
+						crThumb, fileID,
+						MediaStore.Video.Thumbnails.MICRO_KIND, options);
+
+				if (curThumb != null) {
+					imageView.setImageBitmap(curThumb);
+					imageView
+							.setLayoutParams(new Gallery.LayoutParams(185, 150));
+					imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+					imageView.setAdjustViewBounds(true);
+					imageView.setBackgroundResource(mGalleryItemBackground);
+					return imageView;
+				} else {
+					Log.e("decodeImageFile", "File not found "
+							+ getRealPathFromURI(item.getUri()));
+				}
+
+				break;
+			}
+			return null;
 		}
 	}
 
