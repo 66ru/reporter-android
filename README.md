@@ -1,1 +1,2 @@
-![Download apk](http://goo.gl/bxhoK "Скачать приложение")
+[Скачать последний билд](https://github.com/mediasite/reporter-android/raw/master/bin/reporter.apk "Скачать последний билд")<br />
+![Скачать последний билд](http://goo.gl/bxhoK "Скачать последний билд")
