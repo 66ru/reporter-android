@@ -420,6 +420,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 				notifyDataSetChanged();
 			} else
 				gallery.setVisibility(View.GONE);
+			System.gc();
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
