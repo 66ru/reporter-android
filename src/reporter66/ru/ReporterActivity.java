@@ -37,9 +37,11 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.Gallery;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class ReporterActivity extends Activity implements LocationListener {
@@ -61,6 +63,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private Button submit;
 	private ProgressDialog dialog;
 	private ImageButton add_photo;
+	private EditText fullText;
 
 	/* media */
 	private static final int THUMBNAIL_SIZE = 150;
@@ -137,6 +140,42 @@ public class ReporterActivity extends Activity implements LocationListener {
 					onAppend();
 				}
 			});
+		}
+		if (fullText == null) {
+			fullText = (EditText) findViewById(R.id.fullText);
+		}
+
+		Intent incomingIntent = getIntent();
+		Log.i("intent", incomingIntent.toString());
+		if (incomingIntent != null) {
+			Bundle data = incomingIntent.getExtras();
+			String type = incomingIntent.getType();
+			if (type == null)
+				return;
+			String[] fullType = type.split("/", 0);
+			if (fullType[0].startsWith("image")) {
+				Uri image = (Uri) data.get(Intent.EXTRA_STREAM);
+				File v = new File(getRealPathFromURI(image));
+				if (v.canRead() && v.isFile()) {
+					Log.d("income_image", image.toString());
+					galleryItems.add(new galleryItem(image, TYPE_IMAGE));
+					imageAdapter.checkUi();
+				}
+			} else if (fullType[0].startsWith("video")) {
+				Uri video = (Uri) data.get(Intent.EXTRA_STREAM);
+				File v = new File(getRealPathFromURI(video));
+				if (v.canRead() && v.isFile()) {
+					Log.d("income_video", video.toString());
+					galleryItems.add(new galleryItem(video, TYPE_VIDEO));
+					imageAdapter.checkUi();
+				}
+			} else if (fullType[0].startsWith("text")) {
+				CharSequence text = (CharSequence) data.get(Intent.EXTRA_TEXT);
+				Log.i("income", "text recieved: " + text);
+				fullText.setText(text, TextView.BufferType.EDITABLE);
+			} else {
+				Log.i("income", fullType[0].getClass().toString());
+			}
 		}
 	}
 
@@ -279,10 +318,11 @@ public class ReporterActivity extends Activity implements LocationListener {
 			break;
 		case INTENT_VIDEO_CAPTURE:
 			if (resultCode == Activity.RESULT_OK) {
-				if(data != null){
+				if (data != null) {
 					Uri newVideoUri = data.getData();
-					if(newVideoUri != null) {
-						galleryItems.add(new galleryItem(newVideoUri,TYPE_VIDEO));
+					if (newVideoUri != null) {
+						galleryItems.add(new galleryItem(newVideoUri,
+								TYPE_VIDEO));
 						imageAdapter.checkUi();
 					} else {
 						Log.i("INTENT_IMAGE_CAPTURE", "data returned no uri");
@@ -290,7 +330,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 				} else {
 					Log.i("INTENT_IMAGE_CAPTURE", "data is null");
 				}
-				
+
 			} else
 				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
 			break;

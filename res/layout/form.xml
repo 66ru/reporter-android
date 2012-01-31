@@ -31,13 +31,15 @@
     </EditText>
 
     <EditText
-        android:id="@+id/editText2"
+        android:id="@+id/fullText"
         style="@style/InputText"
         android:layout_width="fill_parent"
         android:layout_height="0dip"
         android:layout_weight="0.5"
+        android:gravity="top"
         android:hint="@string/type_text"
-        android:inputType="textMultiLine" />
+        android:inputType="textMultiLine"
+        android:singleLine="false" />
 
     <CheckBox
         android:id="@+id/add_geo"
