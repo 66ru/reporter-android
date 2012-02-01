@@ -46,12 +46,15 @@ import android.widget.Toast;
 
 public class ReporterActivity extends Activity implements LocationListener {
 
-	/* intents codes */
+	/* intent codes */
 	private static final int INTENT_IMAGE_PICK = 1;
 	private static final int INTENT_IMAGE_CAPTURE = 2;
 
 	private static final int INTENT_VIDEO_PICK = 11;
 	private static final int INTENT_VIDEO_CAPTURE = 12;
+	
+	private static final int INTENT_AUDIO_PICK = 21;
+	private static final int INTENT_AUDIO_CAPTURE = 22;
 
 	/* geo */
 	private LocationManager locationManager;
@@ -76,7 +79,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	private static final int TYPE_IMAGE = 0;
 	private static final int TYPE_VIDEO = 1;
-
+	private static final int TYPE_AUDIO = 2;
+	
 	public class galleryItem {
 
 		private Uri uri;
@@ -169,6 +173,14 @@ public class ReporterActivity extends Activity implements LocationListener {
 					galleryItems.add(new galleryItem(video, TYPE_VIDEO));
 					imageAdapter.checkUi();
 				}
+			} else if (fullType[0].startsWith("audio")) {
+				Uri audio = (Uri) data.get(Intent.EXTRA_STREAM);
+				File v = new File(getRealPathFromURI(audio));
+				if (v.canRead() && v.isFile()) {
+					Log.d("income_audio", audio.toString());
+					galleryItems.add(new galleryItem(audio, TYPE_AUDIO));
+					imageAdapter.checkUi();
+				}
 			} else if (fullType[0].startsWith("text")) {
 				CharSequence text = (CharSequence) data.get(Intent.EXTRA_TEXT);
 				Log.i("income", "text recieved: " + text);
@@ -222,7 +234,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	// select intents for media append
 	protected void onAppend() {
 		final CharSequence[] items = { "Фото из галереи", "Сделать фото",
-				"Видео из галереи", "Снять видео" };
+				"Видео из галереи", "Снять видео", "Аудио" };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Добавить:");
@@ -262,8 +274,15 @@ public class ReporterActivity extends Activity implements LocationListener {
 					startActivityForResult(VideoCaptureIntent,
 							INTENT_VIDEO_CAPTURE);
 					break;
+				case 4:
+					Intent AudioIntent = new Intent();
+					AudioIntent.setType("audio/*");
+					AudioIntent.setAction(Intent.ACTION_GET_CONTENT);
+					startActivityForResult(
+							Intent.createChooser(AudioIntent, "Выберите запись"),
+							INTENT_AUDIO_PICK);
+					break;
 				}
-
 			}
 		});
 		AlertDialog alert = builder.create();
@@ -334,6 +353,17 @@ public class ReporterActivity extends Activity implements LocationListener {
 			} else
 				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
 			break;
+		case INTENT_AUDIO_PICK:
+			if (resultCode == Activity.RESULT_OK) {
+
+					Uri selectedAudioUri = data.getData();
+					Log.i("INTENT_AUDIO_PICK",
+							"Selected uri: " + selectedAudioUri.toString());
+					galleryItems.add(new galleryItem(selectedAudioUri, TYPE_AUDIO));
+					imageAdapter.checkUi();
+			} else
+				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
+			break;
 		}
 	}
 
@@ -355,6 +385,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 						break;
 					case TYPE_VIDEO:
 						mime = "video/*";
+						break;
+					case TYPE_AUDIO:
+						mime = "audio/*";
 						break;
 					}
 					intent.setDataAndType(curItem.getUri(), mime);
@@ -591,6 +624,13 @@ public class ReporterActivity extends Activity implements LocationListener {
 				}
 
 				break;
+			case TYPE_AUDIO:
+				imageView.setImageResource(android.R.drawable.ic_media_play);
+				imageView.setLayoutParams(new Gallery.LayoutParams(150, 150));
+				imageView.setScaleType(ImageView.ScaleType.CENTER);
+				imageView.setAdjustViewBounds(true);
+				imageView.setBackgroundResource(mGalleryItemBackground);
+				return imageView;
 			}
 			return null;
 		}
