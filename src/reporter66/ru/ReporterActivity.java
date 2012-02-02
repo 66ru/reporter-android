@@ -52,7 +52,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	private static final int INTENT_VIDEO_PICK = 11;
 	private static final int INTENT_VIDEO_CAPTURE = 12;
-	
+
 	private static final int INTENT_AUDIO_PICK = 21;
 	private static final int INTENT_AUDIO_CAPTURE = 22;
 
@@ -80,7 +80,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private static final int TYPE_IMAGE = 0;
 	private static final int TYPE_VIDEO = 1;
 	private static final int TYPE_AUDIO = 2;
-	
+
 	public class galleryItem {
 
 		private Uri uri;
@@ -278,9 +278,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 					Intent AudioIntent = new Intent();
 					AudioIntent.setType("audio/*");
 					AudioIntent.setAction(Intent.ACTION_GET_CONTENT);
-					startActivityForResult(
-							Intent.createChooser(AudioIntent, "Выберите запись"),
-							INTENT_AUDIO_PICK);
+					startActivityForResult(Intent.createChooser(AudioIntent,
+							"Выберите запись"), INTENT_AUDIO_PICK);
 					break;
 				}
 			}
@@ -356,11 +355,11 @@ public class ReporterActivity extends Activity implements LocationListener {
 		case INTENT_AUDIO_PICK:
 			if (resultCode == Activity.RESULT_OK) {
 
-					Uri selectedAudioUri = data.getData();
-					Log.i("INTENT_AUDIO_PICK",
-							"Selected uri: " + selectedAudioUri.toString());
-					galleryItems.add(new galleryItem(selectedAudioUri, TYPE_AUDIO));
-					imageAdapter.checkUi();
+				Uri selectedAudioUri = data.getData();
+				Log.i("INTENT_AUDIO_PICK",
+						"Selected uri: " + selectedAudioUri.toString());
+				galleryItems.add(new galleryItem(selectedAudioUri, TYPE_AUDIO));
+				imageAdapter.checkUi();
 			} else
 				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
 			break;
