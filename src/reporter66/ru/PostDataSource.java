@@ -58,6 +58,15 @@ public class PostDataSource {
 		database.delete(MySQLiteHelper.TABLE_POSTS, MySQLiteHelper.COLUMN_ID
 				+ " = " + id, null);
 	}
+	
+	public void savePost(Post post) {
+		long id = post.getId();
+		System.out.println("post saved with id: " + id);
+		database.delete(MySQLiteHelper.TABLE_POSTS, MySQLiteHelper.COLUMN_ID
+				+ " = " + id, null);
+		// TODO:!
+		//database.update(MySQLiteHelper.TABLE_POSTS, all, whereClause, whereArgs)
+	}
 
 	public List<Post> getAllPosts() {
 		List<Post> posts = new ArrayList<Post>();

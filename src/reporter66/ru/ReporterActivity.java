@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
+import reporter66.ru.models.PostItem;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -73,40 +75,17 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	private ImageAdapter imageAdapter;
 	private Gallery gallery;
-	private List<galleryItem> galleryItems = new ArrayList<galleryItem>();
+	private List<PostItem> galleryItems = new ArrayList<PostItem>();
 
 	private Uri ImageCaptureUri;
 
 	private static final int TYPE_IMAGE = 0;
 	private static final int TYPE_VIDEO = 1;
 	private static final int TYPE_AUDIO = 2;
-
-	public class galleryItem {
-
-		private Uri uri;
-		private int type;
-
-		public Uri getUri() {
-			return uri;
-		}
-
-		public void setUri(Uri uri) {
-			this.uri = uri;
-		}
-
-		public int getType() {
-			return type;
-		}
-
-		public void setType(int type) {
-			this.type = type;
-		}
-
-		public galleryItem(Uri uri, int type) {
-			this.uri = uri;
-			this.type = type;
-		}
-	}
+	
+	/* db */
+	private PostDataSource postDataSource;
+	private PostItemDataSource postItemsSource;
 
 	// Called at the start of the full lifetime.
 	@Override
@@ -115,7 +94,16 @@ public class ReporterActivity extends Activity implements LocationListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.form);
 		// Initialize activity.
-
+		
+		postDataSource = new PostDataSource(this);
+		postDataSource.open();
+		
+		postItemsSource = new PostItemDataSource(this);
+		postItemsSource.open();
+		
+		galleryItems = postItemsSource.getAllPostItems();
+		Log.i("onCreate", "Loaded " + galleryItems.size() + " PostItems from db.");
+		
 		if (gallery == null) {
 			gallery = (Gallery) findViewById(R.id.gallery);
 			if (imageAdapter == null)
@@ -128,6 +116,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 					onGalleryItemClick(position);
 				}
 			});
+			imageAdapter.checkUi();
 		}
 		if (submit == null) {
 			submit = (Button) findViewById(R.id.submit);
@@ -162,7 +151,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				File v = new File(getRealPathFromURI(image));
 				if (v.canRead() && v.isFile()) {
 					Log.d("income_image", image.toString());
-					galleryItems.add(new galleryItem(image, TYPE_IMAGE));
+					
+					galleryItems.add(postItemsSource.createPostItem(image, TYPE_IMAGE, 0));
 					imageAdapter.checkUi();
 				}
 			} else if (fullType[0].startsWith("video")) {
@@ -170,7 +160,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				File v = new File(getRealPathFromURI(video));
 				if (v.canRead() && v.isFile()) {
 					Log.d("income_video", video.toString());
-					galleryItems.add(new galleryItem(video, TYPE_VIDEO));
+					
+					galleryItems.add(postItemsSource.createPostItem(video, TYPE_VIDEO, 0));
 					imageAdapter.checkUi();
 				}
 			} else if (fullType[0].startsWith("audio")) {
@@ -178,7 +169,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				File v = new File(getRealPathFromURI(audio));
 				if (v.canRead() && v.isFile()) {
 					Log.d("income_audio", audio.toString());
-					galleryItems.add(new galleryItem(audio, TYPE_AUDIO));
+					
+					galleryItems.add(postItemsSource.createPostItem(audio, TYPE_AUDIO, 0));
 					imageAdapter.checkUi();
 				}
 			} else if (fullType[0].startsWith("text")) {
@@ -296,7 +288,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 		case INTENT_IMAGE_PICK:
 			if (resultCode == Activity.RESULT_OK) {
 				Uri selectedImageUri = data.getData();
-				galleryItems.add(new galleryItem(selectedImageUri, TYPE_IMAGE));
+				
+				galleryItems.add(postItemsSource.createPostItem(selectedImageUri, TYPE_IMAGE, 0));
 				imageAdapter.checkUi();
 			}
 			break;
@@ -305,7 +298,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				Uri selectedVideoUri = data.getData();
 				Log.i("INTENT_VIDEO_PICK",
 						"Selected uri: " + selectedVideoUri.toString());
-				galleryItems.add(new galleryItem(selectedVideoUri, TYPE_VIDEO));
+				
+				galleryItems.add(postItemsSource.createPostItem(selectedVideoUri, TYPE_VIDEO, 0));
 				imageAdapter.checkUi();
 			}
 			break;
@@ -320,7 +314,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 									f.getAbsolutePath(), null, null));
 					f.delete();
 					Log.i("INTENT_IMAGE_CAPTURE", "Uri: " + u.toString());
-					galleryItems.add(new galleryItem(u, TYPE_IMAGE));
+					
+					galleryItems.add(postItemsSource.createPostItem(u, TYPE_IMAGE, 0));
 					imageAdapter.checkUi();
 				} catch (FileNotFoundException e) {
 					Toast.makeText(
@@ -339,8 +334,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 				if (data != null) {
 					Uri newVideoUri = data.getData();
 					if (newVideoUri != null) {
-						galleryItems.add(new galleryItem(newVideoUri,
-								TYPE_VIDEO));
+						galleryItems.add(postItemsSource.createPostItem(newVideoUri, TYPE_VIDEO, 0));
 						imageAdapter.checkUi();
 					} else {
 						Log.i("INTENT_IMAGE_CAPTURE", "data returned no uri");
@@ -357,7 +351,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				Uri selectedAudioUri = data.getData();
 				Log.i("INTENT_AUDIO_PICK",
 						"Selected uri: " + selectedAudioUri.toString());
-				galleryItems.add(new galleryItem(selectedAudioUri, TYPE_AUDIO));
+
+				galleryItems.add(postItemsSource.createPostItem(selectedAudioUri, TYPE_AUDIO, 0));
 				imageAdapter.checkUi();
 			} else
 				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
@@ -375,7 +370,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 				case 0:
 					Intent intent = new Intent();
 					intent.setAction(android.content.Intent.ACTION_VIEW);
-					galleryItem curItem = galleryItems.get(position);
+					PostItem curItem = galleryItems.get(position);
 					String mime = "*/*";
 					switch (curItem.getType()) {
 					case TYPE_IMAGE:
@@ -402,6 +397,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	}
 
 	protected void GalleryItemRemove(int position) {
+		postItemsSource.deletePostItem(galleryItems.get(position));
 		galleryItems.remove(position);
 		imageAdapter.checkUi();
 		Toast.makeText(ReporterActivity.this, "Удалено", Toast.LENGTH_SHORT)
@@ -583,7 +579,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 		public View getView(int position, View convertView, ViewGroup parent) {
 			ImageView imageView = new ImageView(mContext);
 
-			galleryItem item = galleryItems.get(position);
+			PostItem item = galleryItems.get(position);
 			switch (item.getType()) {
 			case TYPE_IMAGE:
 				Bitmap img = decodeImageFile(item.getUri());

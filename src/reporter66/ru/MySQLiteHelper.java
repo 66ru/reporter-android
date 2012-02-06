@@ -27,12 +27,12 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 			+ " integer primary key autoincrement, " + COLUMN_TITLE
 			+ " text not null, " + COLUMN_TEXT + " text not null, "
 			+ COLUMN_GEO_LAT + " REAL not null, " + COLUMN_GEO_LNG
-			+ " REAL not null, " + ");";
+			+ " REAL not null" + ");";
 	private static final String DATABASE_CREATE_POST_ITEMS = "create table "
 			+ TABLE_POST_ITEMS + "( " + COLUMN_ID
 			+ " integer primary key autoincrement, " + COLUMN_URI
 			+ " text not null, " + COLUMN_TYPE + " INTEGER not null, "
-			+ COLUMN_POST_ID + " INTEGER not null, " + ");";
+			+ COLUMN_POST_ID + " INTEGER not null" + ");";
 
 	public MySQLiteHelper(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
