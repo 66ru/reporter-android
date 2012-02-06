@@ -348,7 +348,6 @@ public class ReporterActivity extends Activity implements LocationListener {
 				} else {
 					Log.i("INTENT_IMAGE_CAPTURE", "data is null");
 				}
-
 			} else
 				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
 			break;
