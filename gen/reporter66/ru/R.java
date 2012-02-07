@@ -41,7 +41,9 @@ public final class R {
         public static final int feedbacktype2=0x7f040003;
         public static final int feedbacktype3=0x7f040004;
         public static final int feedbacktype4=0x7f040005;
+        public static final int menu_clear=0x7f04000b;
         public static final int menu_exit=0x7f04000a;
+        public static final int menu_history=0x7f04000c;
         public static final int submit=0x7f040006;
         public static final int title=0x7f040001;
         public static final int type_text=0x7f040009;

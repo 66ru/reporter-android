@@ -51,6 +51,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crittercism.app.Crittercism;
+
 public class ReporterActivity extends Activity implements LocationListener {
 
 	/* intent codes */
@@ -88,50 +90,54 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private static final int TYPE_IMAGE = 0;
 	private static final int TYPE_VIDEO = 1;
 	private static final int TYPE_AUDIO = 2;
-	
+
 	/* db */
 	private PostDataSource postDataSource;
 	private PostItemDataSource postItemsSource;
-	
+
 	/* models */
 	private Post post = null;
+	
+	private boolean production = false;
 
 	// Called at the start of the full lifetime.
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		Log.i("action", "onCreate");
 		super.onCreate(savedInstanceState);
+		Crittercism.init(getApplicationContext(), "4f30f177b093150d1a000807", production);
+
 		setContentView(R.layout.form);
 		// Initialize activity.
-		
+
 		postDataSource = new PostDataSource(this);
 		postDataSource.open();
-		
+
 		postItemsSource = new PostItemDataSource(this);
 		postItemsSource.open();
-		
+
 		if (fullText == null) {
 			fullText = (EditText) findViewById(R.id.fullText);
 		}
 		if (subject == null) {
 			subject = (EditText) findViewById(R.id.subject);
 		}
-		
-		if(post == null) {
+
+		if (post == null) {
 			post = postDataSource.getLastPost();
-			if(post == null) {
+			if (post == null) {
 				post = new Post();
 				post.setId(-1);
-				Log.i("postDataSource","New post");
+				Log.i("postDataSource", "New post");
 			} else {
-				Log.i("postDataSource","Loaded post with id = " + post.getId());
-				subject.setText((CharSequence)post.getTitle());
-				fullText.setText((CharSequence)post.getText());
+				Log.i("postDataSource", "Loaded post with id = " + post.getId());
+				postLoad();
 			}
 		}
-		if(post.getId() >= 0){
+		if (post.getId() >= 0) {
 			galleryItems = postItemsSource.getAllPostItems(post.getId());
-			Log.i("onCreate", "Loaded " + galleryItems.size() + " PostItems from db.");
+			Log.i("onCreate", "Loaded " + galleryItems.size()
+					+ " PostItems from db.");
 		}
 		if (gallery == null) {
 			gallery = (Gallery) findViewById(R.id.gallery);
@@ -163,39 +169,45 @@ public class ReporterActivity extends Activity implements LocationListener {
 				}
 			});
 		}
-		
+
 		/* edit handlers */
-		subject.addTextChangedListener(new TextWatcher(){
-			
+		subject.addTextChangedListener(new TextWatcher() {
+
 			@Override
-	        public void afterTextChanged(Editable s) { postUpdated(); }
+			public void afterTextChanged(Editable s) {
+				postUpdated();
+			}
 
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count,
-					int after) {}
+					int after) {
+			}
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before,
-					int count) {}
+					int count) {
+			}
 
 		});
-		
-		fullText.addTextChangedListener(new TextWatcher(){
-			
+
+		fullText.addTextChangedListener(new TextWatcher() {
+
 			@Override
-	        public void afterTextChanged(Editable s) { postUpdated(); }
+			public void afterTextChanged(Editable s) {
+				postUpdated();
+			}
 
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count,
-					int after) {}
+					int after) {
+			}
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before,
-					int count) {}
+					int count) {
+			}
 
 		});
-		
-	
 
 		Intent incomingIntent = getIntent();
 		Log.i("intent", incomingIntent.toString());
@@ -210,8 +222,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 				File v = new File(getRealPathFromURI(image));
 				if (v.canRead() && v.isFile()) {
 					Log.d("income_image", image.toString());
-					
-					galleryItems.add(postItemsSource.createPostItem(image, TYPE_IMAGE, post.getId()));
+
+					galleryItems.add(postItemsSource.createPostItem(image,
+							TYPE_IMAGE, post.getId()));
 					imageAdapter.checkUi();
 				}
 			} else if (fullType[0].startsWith("video")) {
@@ -219,8 +232,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 				File v = new File(getRealPathFromURI(video));
 				if (v.canRead() && v.isFile()) {
 					Log.d("income_video", video.toString());
-					
-					galleryItems.add(postItemsSource.createPostItem(video, TYPE_VIDEO, post.getId()));
+
+					galleryItems.add(postItemsSource.createPostItem(video,
+							TYPE_VIDEO, post.getId()));
 					imageAdapter.checkUi();
 				}
 			} else if (fullType[0].startsWith("audio")) {
@@ -228,8 +242,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 				File v = new File(getRealPathFromURI(audio));
 				if (v.canRead() && v.isFile()) {
 					Log.d("income_audio", audio.toString());
-					
-					galleryItems.add(postItemsSource.createPostItem(audio, TYPE_AUDIO, post.getId()));
+
+					galleryItems.add(postItemsSource.createPostItem(audio,
+							TYPE_AUDIO, post.getId()));
 					imageAdapter.checkUi();
 				}
 			} else if (fullType[0].startsWith("text")) {
@@ -244,11 +259,21 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	protected void postUpdated() {
 		Log.i("postUpdated", "Yeah! id = " + post.getId());
-		if(post.getId() == -1) {
-			post = postDataSource.createPost(subject.getText().toString(), fullText.getText().toString(), null, null);
+		if (post.getId() == -1) {
+			post = postDataSource.createPost(subject.getText().toString(),
+					fullText.getText().toString(), null, null);
 		} else {
-			
+
 		}
+	}
+	protected void postLoad() {
+		subject.setText((CharSequence) post.getTitle());
+		fullText.setText((CharSequence) post.getText());
+	}
+	
+	protected void postClear() {
+		subject.setText("");
+		fullText.setText("");
 	}
 
 	// data submit
@@ -351,17 +376,18 @@ public class ReporterActivity extends Activity implements LocationListener {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		Log.i("action", "onActivityResult");
-		if(resultCode == Activity.RESULT_OK && post.getId() < 0){
+		if (resultCode == Activity.RESULT_OK && post.getId() < 0) {
 			post = postDataSource.createPost("", "", null, null);
 		}
-		
+
 		super.onActivityResult(requestCode, resultCode, data);
 		switch (requestCode) {
 		case INTENT_IMAGE_PICK:
 			if (resultCode == Activity.RESULT_OK) {
 				Uri selectedImageUri = data.getData();
-				
-				galleryItems.add(postItemsSource.createPostItem(selectedImageUri, TYPE_IMAGE, post.getId()));
+
+				galleryItems.add(postItemsSource.createPostItem(
+						selectedImageUri, TYPE_IMAGE, post.getId()));
 				imageAdapter.checkUi();
 			}
 			break;
@@ -370,8 +396,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 				Uri selectedVideoUri = data.getData();
 				Log.i("INTENT_VIDEO_PICK",
 						"Selected uri: " + selectedVideoUri.toString());
-				
-				galleryItems.add(postItemsSource.createPostItem(selectedVideoUri, TYPE_VIDEO, post.getId()));
+
+				galleryItems.add(postItemsSource.createPostItem(
+						selectedVideoUri, TYPE_VIDEO, post.getId()));
 				imageAdapter.checkUi();
 			}
 			break;
@@ -386,8 +413,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 									f.getAbsolutePath(), null, null));
 					f.delete();
 					Log.i("INTENT_IMAGE_CAPTURE", "Uri: " + u.toString());
-					
-					galleryItems.add(postItemsSource.createPostItem(u, TYPE_IMAGE, post.getId()));
+
+					galleryItems.add(postItemsSource.createPostItem(u,
+							TYPE_IMAGE, post.getId()));
 					imageAdapter.checkUi();
 				} catch (FileNotFoundException e) {
 					Toast.makeText(
@@ -406,7 +434,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				if (data != null) {
 					Uri newVideoUri = data.getData();
 					if (newVideoUri != null) {
-						galleryItems.add(postItemsSource.createPostItem(newVideoUri, TYPE_VIDEO, post.getId()));
+						galleryItems.add(postItemsSource.createPostItem(
+								newVideoUri, TYPE_VIDEO, post.getId()));
 						imageAdapter.checkUi();
 					} else {
 						Log.i("INTENT_IMAGE_CAPTURE", "data returned no uri");
@@ -424,7 +453,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				Log.i("INTENT_AUDIO_PICK",
 						"Selected uri: " + selectedAudioUri.toString());
 
-				galleryItems.add(postItemsSource.createPostItem(selectedAudioUri, TYPE_AUDIO, post.getId()));
+				galleryItems.add(postItemsSource.createPostItem(
+						selectedAudioUri, TYPE_AUDIO, post.getId()));
 				imageAdapter.checkUi();
 			} else
 				Log.i("INTENT_IMAGE_CAPTURE", "resutCode is abnormal");
@@ -592,26 +622,63 @@ public class ReporterActivity extends Activity implements LocationListener {
 		super.onDestroy();
 	}
 
-	static final private int MENU_EXIT = Menu.FIRST;
+	static final private int MENU_CLEAR = Menu.FIRST;
+	static final private int MENU_HISTORY = Menu.FIRST +1;
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 
+		MenuItem menuClear = menu
+				.add(0, MENU_CLEAR, Menu.NONE, R.string.menu_clear);
+		//MenuItem menuHistory = menu
+		//		.add(0, MENU_HISTORY, Menu.NONE, R.string.menu_history);
+		
+		menuClear.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+			public boolean onMenuItemClick(MenuItem _menuItem) {
+					postDataSource.deletePost(post);
+					post = null;
+					post = new Post();
+					post.setId(-1);
+					postClear();
+				return true;
+			}
+		});
+		final ReporterActivity self = this;
 		/*
-		 * // Group ID int groupId = 0; // Unique menu item identifier. Used for
-		 * event handling. int menuItemId = MENU_EXIT; // The order position of
-		 * the item int menuItemOrder = Menu.NONE; // Text to be displayed for
-		 * this menu item. int menuItemText = R.string.menu_exit; // Create the
-		 * menu item and keep a reference to it. MenuItem menuItem =
-		 * menu.add(groupId, menuItemId, menuItemOrder, menuItemText);
-		 * 
-		 * menuItem.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-		 * public boolean onMenuItemClick(MenuItem _menuItem) {
-		 * 
-		 * return true; } });
-		 */
-
+		menuHistory.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+			public boolean onMenuItemClick(MenuItem _menuItem) {
+				List<Post> posts = postDataSource.getAllPosts();
+				if(posts.size()>0){
+					List<String> listItems = new ArrayList<String>();
+					for(int r = 0; r < posts.size(); r++){
+						String title = posts.get(r).getTitle();
+						if(title == "" || title == null){
+							title = "<без темы>";
+						}
+						listItems.add(title);
+						Log.i("menu","added: "+title);
+					}
+					final CharSequence[] items = listItems.toArray(new CharSequence[listItems.size()]);
+					
+					AlertDialog.Builder builder = new AlertDialog.Builder(self);
+					builder.setTitle("Выбрать:");
+					builder.setItems(items, new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int item) {
+							switch (item) {
+							case 0:
+								break;
+							}
+						}
+					});
+					AlertDialog alert = builder.create();
+					alert.show();
+				} else {
+					Toast.makeText(self, "История пуста", Toast.LENGTH_SHORT);
+				}
+				return true;
+			}
+		});*/
 		return true;
 	}
 

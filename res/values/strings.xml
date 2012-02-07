@@ -20,4 +20,6 @@
 	<string name="type_text">Введите сообщение</string>
 	
 	<string name="menu_exit">Выход</string>
+	<string name="menu_clear">Очистить</string>
+	<string name="menu_history">История</string>
 </resources>
