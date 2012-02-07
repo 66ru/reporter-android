@@ -98,7 +98,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	/* models */
 	private Post post = null;
 	
-	private boolean production = false;
+	private boolean production = true;
 
 	// Called at the start of the full lifetime.
 	@Override
