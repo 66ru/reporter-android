@@ -78,6 +78,11 @@ public class PostItemDataSource {
 		cursor.close();
 		return postItems;
 	}
+	
+	public void deleteAllPostItems(long id) {
+		database.delete(MySQLiteHelper.TABLE_POST_ITEMS, MySQLiteHelper.COLUMN_POST_ID
+				+ " = " + id, null);
+	}
 
 	private PostItem cursorToPostItem(Cursor cursor) {
 		PostItem postItem = new PostItem();

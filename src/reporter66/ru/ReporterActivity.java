@@ -105,7 +105,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 	public void onCreate(Bundle savedInstanceState) {
 		Log.i("action", "onCreate");
 		super.onCreate(savedInstanceState);
-		Crittercism.init(getApplicationContext(), "4f30f177b093150d1a000807", production);
+		if(production)
+			Crittercism.init(getApplicationContext(), "4f30f177b093150d1a000807");
 
 		setContentView(R.layout.form);
 		// Initialize activity.
@@ -126,12 +127,11 @@ public class ReporterActivity extends Activity implements LocationListener {
 		if (post == null) {
 			post = postDataSource.getLastPost();
 			if (post == null) {
-				post = new Post();
-				post.setId(-1);
+				post = postDataSource.createPost("", "", null, null);
 				Log.i("postDataSource", "New post");
 			} else {
 				Log.i("postDataSource", "Loaded post with id = " + post.getId());
-				postLoad();
+				postShow();
 			}
 		}
 		if (post.getId() >= 0) {
@@ -172,25 +172,6 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 		/* edit handlers */
 		subject.addTextChangedListener(new TextWatcher() {
-
-			@Override
-			public void afterTextChanged(Editable s) {
-				postUpdated();
-			}
-
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count,
-					int after) {
-			}
-
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before,
-					int count) {
-			}
-
-		});
-
-		fullText.addTextChangedListener(new TextWatcher() {
 
 			@Override
 			public void afterTextChanged(Editable s) {
@@ -259,19 +240,20 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	protected void postUpdated() {
 		Log.i("postUpdated", "Yeah! id = " + post.getId());
-		if (post.getId() == -1) {
-			post = postDataSource.createPost(subject.getText().toString(),
-					fullText.getText().toString(), null, null);
-		} else {
-
-		}
+		post.setText(fullText.getText().toString());
+		post.setTitle(subject.getText().toString());
+		postDataSource.savePost(post);
 	}
-	protected void postLoad() {
+	protected void postShow() {
 		subject.setText((CharSequence) post.getTitle());
 		fullText.setText((CharSequence) post.getText());
 	}
 	
 	protected void postClear() {
+		postDataSource.deletePost(post);
+		galleryItems = null;
+		postItemsSource.deleteAllPostItems(post.getId());
+		post = postDataSource.createPost("", "", null, null);
 		subject.setText("");
 		fullText.setText("");
 	}
@@ -615,6 +597,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	@Override
 	public void onDestroy() {
 		Log.i("action", "onDestroy");
+		postUpdated();
 		postDataSource.close();
 		postItemsSource.close();
 		// Clean up any resources including ending threads,
@@ -636,11 +619,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 		
 		menuClear.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem _menuItem) {
-					postDataSource.deletePost(post);
-					post = null;
-					post = new Post();
-					post.setId(-1);
-					postClear();
+				postClear();
 				return true;
 			}
 		});
