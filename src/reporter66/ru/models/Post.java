@@ -2,6 +2,8 @@ package reporter66.ru.models;
 
 import java.util.List;
 
+import reporter66.ru.db.PostDataSource;
+
 public class Post {
 	private long id;
 	private String title;
