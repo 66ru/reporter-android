@@ -97,7 +97,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	/* models */
 	private Post post = null;
-	
+
 	private boolean production = true;
 
 	// Called at the start of the full lifetime.
@@ -105,8 +105,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 	public void onCreate(Bundle savedInstanceState) {
 		Log.i("action", "onCreate");
 		super.onCreate(savedInstanceState);
-		if(production)
-			Crittercism.init(getApplicationContext(), "4f30f177b093150d1a000807");
+		if (production)
+			Crittercism.init(getApplicationContext(),
+					"4f30f177b093150d1a000807");
 
 		setContentView(R.layout.form);
 		// Initialize activity.
@@ -170,26 +171,6 @@ public class ReporterActivity extends Activity implements LocationListener {
 			});
 		}
 
-		/* edit handlers */
-		subject.addTextChangedListener(new TextWatcher() {
-
-			@Override
-			public void afterTextChanged(Editable s) {
-				postUpdated();
-			}
-
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count,
-					int after) {
-			}
-
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before,
-					int count) {
-			}
-
-		});
-
 		Intent incomingIntent = getIntent();
 		Log.i("intent", incomingIntent.toString());
 		if (incomingIntent != null) {
@@ -244,11 +225,12 @@ public class ReporterActivity extends Activity implements LocationListener {
 		post.setTitle(subject.getText().toString());
 		postDataSource.savePost(post);
 	}
+
 	protected void postShow() {
 		subject.setText((CharSequence) post.getTitle());
 		fullText.setText((CharSequence) post.getText());
 	}
-	
+
 	protected void postClear() {
 		postDataSource.deletePost(post);
 		galleryItems = null;
@@ -606,17 +588,17 @@ public class ReporterActivity extends Activity implements LocationListener {
 	}
 
 	static final private int MENU_CLEAR = Menu.FIRST;
-	static final private int MENU_HISTORY = Menu.FIRST +1;
+	static final private int MENU_HISTORY = Menu.FIRST + 1;
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 
-		MenuItem menuClear = menu
-				.add(0, MENU_CLEAR, Menu.NONE, R.string.menu_clear);
-		//MenuItem menuHistory = menu
-		//		.add(0, MENU_HISTORY, Menu.NONE, R.string.menu_history);
-		
+		MenuItem menuClear = menu.add(0, MENU_CLEAR, Menu.NONE,
+				R.string.menu_clear);
+		// MenuItem menuHistory = menu
+		// .add(0, MENU_HISTORY, Menu.NONE, R.string.menu_history);
+
 		menuClear.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem _menuItem) {
 				postClear();
@@ -625,39 +607,24 @@ public class ReporterActivity extends Activity implements LocationListener {
 		});
 		final ReporterActivity self = this;
 		/*
-		menuHistory.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-			public boolean onMenuItemClick(MenuItem _menuItem) {
-				List<Post> posts = postDataSource.getAllPosts();
-				if(posts.size()>0){
-					List<String> listItems = new ArrayList<String>();
-					for(int r = 0; r < posts.size(); r++){
-						String title = posts.get(r).getTitle();
-						if(title == "" || title == null){
-							title = "<без темы>";
-						}
-						listItems.add(title);
-						Log.i("menu","added: "+title);
-					}
-					final CharSequence[] items = listItems.toArray(new CharSequence[listItems.size()]);
-					
-					AlertDialog.Builder builder = new AlertDialog.Builder(self);
-					builder.setTitle("Выбрать:");
-					builder.setItems(items, new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int item) {
-							switch (item) {
-							case 0:
-								break;
-							}
-						}
-					});
-					AlertDialog alert = builder.create();
-					alert.show();
-				} else {
-					Toast.makeText(self, "История пуста", Toast.LENGTH_SHORT);
-				}
-				return true;
-			}
-		});*/
+		 * menuHistory.setOnMenuItemClickListener(new OnMenuItemClickListener()
+		 * { public boolean onMenuItemClick(MenuItem _menuItem) { List<Post>
+		 * posts = postDataSource.getAllPosts(); if(posts.size()>0){
+		 * List<String> listItems = new ArrayList<String>(); for(int r = 0; r <
+		 * posts.size(); r++){ String title = posts.get(r).getTitle(); if(title
+		 * == "" || title == null){ title = "<без темы>"; }
+		 * listItems.add(title); Log.i("menu","added: "+title); } final
+		 * CharSequence[] items = listItems.toArray(new
+		 * CharSequence[listItems.size()]);
+		 * 
+		 * AlertDialog.Builder builder = new AlertDialog.Builder(self);
+		 * builder.setTitle("Выбрать:"); builder.setItems(items, new
+		 * DialogInterface.OnClickListener() { public void
+		 * onClick(DialogInterface dialog, int item) { switch (item) { case 0:
+		 * break; } } }); AlertDialog alert = builder.create(); alert.show(); }
+		 * else { Toast.makeText(self, "История пуста", Toast.LENGTH_SHORT); }
+		 * return true; } });
+		 */
 		return true;
 	}
 

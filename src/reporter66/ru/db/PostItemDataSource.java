@@ -20,10 +20,8 @@ public class PostItemDataSource {
 	private SQLiteDatabase database;
 	private MySQLiteHelper dbHelper;
 	private String[] allColumns = { MySQLiteHelper.COLUMN_ID,
-			MySQLiteHelper.COLUMN_URI,
-			MySQLiteHelper.COLUMN_TYPE,
-			MySQLiteHelper.COLUMN_POST_ID,
-			};
+			MySQLiteHelper.COLUMN_URI, MySQLiteHelper.COLUMN_TYPE,
+			MySQLiteHelper.COLUMN_POST_ID, };
 
 	public PostItemDataSource(Context context) {
 		dbHelper = new MySQLiteHelper(context);
@@ -42,7 +40,7 @@ public class PostItemDataSource {
 		values.put(MySQLiteHelper.COLUMN_URI, uri.toString());
 		values.put(MySQLiteHelper.COLUMN_TYPE, type);
 		values.put(MySQLiteHelper.COLUMN_POST_ID, post_id);
-		
+
 		long insertId = database.insert(MySQLiteHelper.TABLE_POST_ITEMS, null,
 				values);
 		// To show how to query
@@ -56,19 +54,19 @@ public class PostItemDataSource {
 	public void deletePostItem(PostItem postItem) {
 		long id = postItem.getId();
 		System.out.println("postItem deleted with id: " + id);
-		database.delete(MySQLiteHelper.TABLE_POST_ITEMS, MySQLiteHelper.COLUMN_ID
-				+ " = " + id, null);
+		database.delete(MySQLiteHelper.TABLE_POST_ITEMS,
+				MySQLiteHelper.COLUMN_ID + " = " + id, null);
 	}
-	
 
 	public List<PostItem> getAllPostItems(long id) {
 		List<PostItem> postItems = new ArrayList<PostItem>();
 		Cursor cursor = database.query(MySQLiteHelper.TABLE_POST_ITEMS,
-				allColumns, MySQLiteHelper.COLUMN_POST_ID + " = " + id, null, null, null, null);
+				allColumns, MySQLiteHelper.COLUMN_POST_ID + " = " + id, null,
+				null, null, null);
 		cursor.moveToFirst();
 		int i = 0;
 		while (!cursor.isAfterLast()) {
-			Log.i("getAllPostItems",i+"");
+			Log.i("getAllPostItems", i + "");
 			PostItem postItem = cursorToPostItem(cursor);
 			postItems.add(postItem);
 			cursor.moveToNext();
@@ -78,10 +76,10 @@ public class PostItemDataSource {
 		cursor.close();
 		return postItems;
 	}
-	
+
 	public void deleteAllPostItems(long id) {
-		database.delete(MySQLiteHelper.TABLE_POST_ITEMS, MySQLiteHelper.COLUMN_POST_ID
-				+ " = " + id, null);
+		database.delete(MySQLiteHelper.TABLE_POST_ITEMS,
+				MySQLiteHelper.COLUMN_POST_ID + " = " + id, null);
 	}
 
 	private PostItem cursorToPostItem(Cursor cursor) {
