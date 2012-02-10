@@ -45,6 +45,8 @@
                 <data android:mimeType="text/*" />
             </intent-filter>
         </activity>
+        
+        <service android:name=".net.SendService"></service>
 
         <!-- Start of Crittercism.com Code -->
         <activity android:name="com.crittercism.FeedbackActivity" />

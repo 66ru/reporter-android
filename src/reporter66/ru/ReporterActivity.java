@@ -10,14 +10,17 @@ import reporter66.ru.db.PostDataSource;
 import reporter66.ru.db.PostItemDataSource;
 import reporter66.ru.models.Post;
 import reporter66.ru.models.PostItem;
+import reporter66.ru.net.SendService;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.database.Cursor;
@@ -28,8 +31,10 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -41,6 +46,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -77,13 +83,14 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private ImageButton add_photo;
 	private EditText fullText;
 	private EditText subject;
+	public static ProgressDialog progressDialog;
 
 	/* media */
 	private static final int THUMBNAIL_SIZE = 150;
 
 	private ImageAdapter imageAdapter;
 	private Gallery gallery;
-	private List<PostItem> galleryItems = new ArrayList<PostItem>();
+	public static List<PostItem> galleryItems = new ArrayList<PostItem>();
 
 	private Uri ImageCaptureUri;
 
@@ -98,7 +105,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 	/* models */
 	private Post post = null;
 
-	private boolean production = true;
+	private boolean production = false;
+	protected SendService s;
 
 	// Called at the start of the full lifetime.
 	@Override
@@ -108,10 +116,12 @@ public class ReporterActivity extends Activity implements LocationListener {
 		if (production)
 			Crittercism.init(getApplicationContext(),
 					"4f30f177b093150d1a000807");
-
+		doBindService();
 		setContentView(R.layout.form);
 		// Initialize activity.
-
+		if(progressDialog == null)
+			progressDialog = new ProgressDialog(ReporterActivity.this);
+		
 		postDataSource = new PostDataSource(this);
 		postDataSource.open();
 
@@ -158,6 +168,13 @@ public class ReporterActivity extends Activity implements LocationListener {
 			submit = (Button) findViewById(R.id.submit);
 			submit.setOnClickListener(new View.OnClickListener() {
 				public void onClick(View v) {
+					progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+					progressDialog.setMessage("Отправка файлов...");
+					progressDialog.setCancelable(true);
+					progressDialog.setProgress(0);
+					progressDialog.setMax(ReporterActivity.galleryItems.size());
+					progressDialog.setOwnerActivity(ReporterActivity.this);
+					progressDialog.show();
 					onSubmit();
 				}
 			});
@@ -278,8 +295,19 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 			dialog.dismiss();
 		}
+		
+		List<PostItem> prepare = new ArrayList<PostItem>();
+		for (PostItem item : galleryItems){
+			item.setPath(getRealPathFromURI(item.getUri()));
+			prepare.add(item);
+		}
+		new sendData().execute();
 	}
-
+	
+	private void onSubmitEnd(){
+		Toast.makeText(ReporterActivity.this, "Файлы загружены!", Toast.LENGTH_LONG).show();
+	}
+	
 	// select intents for media append
 	protected void onAppend() {
 		final CharSequence[] items = { "Фото из галереи", "Сделать фото",
@@ -784,5 +812,34 @@ public class ReporterActivity extends Activity implements LocationListener {
 		cursor.moveToFirst();
 
 		return cursor.getString(column_index);
+	}
+	
+	private ServiceConnection mConnection = new ServiceConnection() {
+
+		public void onServiceConnected(ComponentName className, IBinder binder) {
+			s = ((SendService.MyBinder) binder).getService();
+			Toast.makeText(ReporterActivity.this, "Connected",
+					Toast.LENGTH_SHORT).show();
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			s = null;
+		}
+	};
+	void doBindService() {
+		bindService(new Intent(this, SendService.class), mConnection,
+				Context.BIND_AUTO_CREATE);
+	}
+	private class sendData extends AsyncTask<String, Void, Void> {
+		@Override
+	     protected Void doInBackground(String... params) {
+	    	 if (s != null)
+	 			s.sendFiles();
+			return null;
+	     }
+			@Override
+			protected void onPostExecute(Void result) {
+				onSubmitEnd();
+			}
 	}
 }

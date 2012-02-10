@@ -7,6 +7,7 @@ public class PostItem {
 	private Uri uri;
 	private int type;
 	private long post_id;
+	private String path;
 	
 	public long getId() {
 		return id;
@@ -33,6 +34,12 @@ public class PostItem {
 		this.post_id = post_id;
 	}
 	
+	public String getPath() {
+		return path;
+	}
+	public void setPath(String path) {
+		this.path = path;
+	}
 	@Override
 	public String toString() {
 		return uri.toString();
