@@ -4,25 +4,24 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import java.io.IOException;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URLEncoder;
 
 import reporter66.ru.ReporterActivity;
+import reporter66.ru.models.Post;
 import reporter66.ru.models.PostItem;
 
-import android.app.ProgressDialog;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 public class SendService extends Service {
 	private static final String TAG = "SendService";
@@ -32,6 +31,11 @@ public class SendService extends Service {
 	static final byte[] buffer = new byte[BUFF_SIZE];
 	protected static final long DEBUG_DELAY = 1;
 
+	protected String urlServer = "http://bazilio91.ru/r.php";
+	protected String lineEnd = "\r\n";
+	protected String twoHyphens = "--";
+	protected String boundary = "*****";
+
 	private final IBinder mBinder = new MyBinder();
 
 	@Override
@@ -40,17 +44,78 @@ public class SendService extends Service {
 		Log.d(TAG, "onStart");
 	}
 
-	public void sendFiles() {
+	public int sendMeta(Post post) {
+		Log.i(TAG, "Sending text data to server");
+		HttpURLConnection connection = null;
+		try {
+			java.net.URL url = new java.net.URL(urlServer);
+			String param = "text=" + URLEncoder.encode(post.getText(), "UTF-8")
+					+ "&title=" + URLEncoder.encode(post.getTitle(), "UTF-8")
+					+ "&geo_lat="
+					+ URLEncoder.encode(post.getGeo_lat().toString(), "UTF-8")
+					+ "&geo_lng="
+					+ URLEncoder.encode(post.getGeo_lng().toString(), "UTF-8")
+					+ "&uid="
+					+ URLEncoder.encode(post.getUid(), "UTF-8");
+
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setUseCaches(false);
+			connection.setDoInput(true);
+			connection.setDoOutput(true);
+			connection.setRequestMethod("POST");
+			connection.setRequestProperty("Content-Type",
+					"application/x-www-form-urlencoded");
+			connection.setRequestProperty("Connection", "Keep-Alive");
+			connection.setFixedLengthStreamingMode(param.getBytes().length);
+
+			DataOutputStream wr = new DataOutputStream(
+					connection.getOutputStream());
+			wr.writeBytes(param);
+			wr.flush();
+			wr.close();
+
+			int responseCode = connection.getResponseCode();
+			if (responseCode == 200) {
+
+				InputStream in = connection.getInputStream();
+
+				InputStreamReader isr = new InputStreamReader(in, "UTF-8");
+
+				StringBuffer data = new StringBuffer();
+				int c;
+				while ((c = isr.read()) != -1) {
+					data.append((char) c);
+				}
+
+				String resultString = new String(data.toString());
+
+				Log.i(TAG, "Rsponse: " + resultString);
+
+				return Integer.parseInt(resultString);
+			}
+
+		} catch (MalformedURLException e) {
+			Log.e(TAG, e.getMessage());
+			e.printStackTrace();
+		} catch (IOException e) {
+			Log.e(TAG, e.getMessage());
+			e.printStackTrace();
+		}
+		return -1;
+
+	}
+
+	public void sendFiles(int id) {
 		int i = 0;
 		Log.i(TAG, "Sending " + ReporterActivity.galleryItems.size()
-				+ "files to server");
+				+ " files to server");
 
 		for (PostItem item : ReporterActivity.galleryItems) {
 			ReporterActivity.progressDialog.setProgress(i);
 			i++;
 			Log.i(TAG, "Processing file " + i + " of total "
 					+ ReporterActivity.galleryItems.size());
-			uploadFile(item);
+			uploadFile(item, id);
 		}
 		ReporterActivity.progressDialog.dismiss();
 	}
@@ -91,7 +156,8 @@ public class SendService extends Service {
 		}
 	}
 
-	public void uploadFile(PostItem item) {
+	public void uploadFile(PostItem item, int id) {
+		Log.i(TAG, item.getId() + " >> " + id);
 		String response = null;
 
 		HttpURLConnection connection = null;
@@ -99,10 +165,6 @@ public class SendService extends Service {
 		DataInputStream inputStream = null;
 
 		String pathToOurFile = item.getPath();
-		String urlServer = "http://bazilio91.ru/r.php";
-		String lineEnd = "\r\n";
-		String twoHyphens = "--";
-		String boundary = "*****";
 
 		int bytesRead, bytesAvailable, bufferSize;
 		byte[] buffer;
@@ -124,6 +186,7 @@ public class SendService extends Service {
 			connection.setRequestMethod("POST");
 
 			connection.setRequestProperty("Connection", "Keep-Alive");
+			connection.setFixedLengthStreamingMode(20*1024*1024);
 
 			// file send
 
@@ -167,19 +230,23 @@ public class SendService extends Service {
 
 			outputStream
 					.writeBytes("content-disposition: form-data; name=\"id\"\r\n\r\n");
-			outputStream.writeBytes(item.getPost_id() + "");
+			outputStream.writeBytes(id + "");
 			outputStream.writeBytes("\r\n" + "--" + boundary + "\r\n");
 
-			// Responses from the server (code and message)
-			Log.i("response", connection.getResponseCode() + "");
-			Log.i("response", connection.getResponseMessage());
-
-			response = connection.getResponseCode() + "";
+			outputStream
+					.writeBytes("content-disposition: form-data; name=\"type\"\r\n\r\n");
+			outputStream.writeBytes(item.getType() + "");
+			outputStream.writeBytes("\r\n" + "--" + boundary + "\r\n");
 
 			fileInputStream.close();
 			outputStream.flush();
 			outputStream.close();
 			connection.disconnect();
+			// Responses from the server (code and message)
+			Log.i("response", connection.getResponseCode() + "");
+			Log.i("response", connection.getResponseMessage());
+
+			response = connection.getResponseCode() + "";
 			Log.d(TAG, "uploadFile successfull");
 		} catch (MalformedURLException e) {
 			Log.e(TAG, "NetDisconeeted");

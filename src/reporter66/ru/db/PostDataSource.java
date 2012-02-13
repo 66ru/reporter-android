@@ -110,8 +110,8 @@ public class PostDataSource {
 		post.setId(cursor.getLong(0));
 		post.setTitle(cursor.getString(1));
 		post.setText(cursor.getString(2));
-		post.setGeo_lat(cursor.getFloat(3));
-		post.setGeo_lng(cursor.getFloat(4));
+		post.setGeo_lat(cursor.getDouble(3));
+		post.setGeo_lng(cursor.getDouble(4));
 		return post;
 	}
 }

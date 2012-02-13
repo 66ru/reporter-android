@@ -22,9 +22,10 @@ public final class R {
     }
     public static final class id {
         public static final int add_geo=0x7f070003;
-        public static final int add_photo=0x7f070007;
+        public static final int add_photo=0x7f070008;
         public static final int fullText=0x7f070002;
         public static final int gallery=0x7f070004;
+        public static final int geo_button=0x7f070007;
         public static final int linearLayout1=0x7f070005;
         public static final int subject=0x7f070001;
         public static final int submit=0x7f070006;

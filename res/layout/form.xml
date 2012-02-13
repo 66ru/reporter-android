@@ -48,6 +48,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:checked="true"
+        android:visibility="gone"
         android:gravity="center|right"
         android:text="@string/add_geo" />
 
@@ -67,8 +68,14 @@
             android:id="@+id/submit"
             android:layout_width="0dip"
             android:layout_height="fill_parent"
-            android:layout_weight="1"
+            android:layout_weight="0.89"
             android:text="@string/submit" />
+
+        <ImageButton
+            android:id="@+id/geo_button"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:src="@android:drawable/ic_menu_mylocation" />
 
         <ImageButton
             android:id="@+id/add_photo"

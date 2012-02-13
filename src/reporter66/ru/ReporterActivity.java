@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
+import reporter66.ru.db.MySQLiteHelper;
 import reporter66.ru.db.PostDataSource;
 import reporter66.ru.db.PostItemDataSource;
 import reporter66.ru.models.Post;
@@ -18,6 +19,7 @@ import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -36,6 +38,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
+import android.provider.Settings;
+import android.provider.Settings.Secure;
+import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -81,6 +86,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private Button submit;
 	private ProgressDialog dialog;
 	private ImageButton add_photo;
+	private ImageButton geo_button;
 	private EditText fullText;
 	private EditText subject;
 	public static ProgressDialog progressDialog;
@@ -101,6 +107,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	/* db */
 	private PostDataSource postDataSource;
 	private PostItemDataSource postItemsSource;
+	private MySQLiteHelper mySQLiteHelper = new MySQLiteHelper(ReporterActivity.this);
 
 	/* models */
 	private Post post = null;
@@ -119,9 +126,9 @@ public class ReporterActivity extends Activity implements LocationListener {
 		doBindService();
 		setContentView(R.layout.form);
 		// Initialize activity.
-		if(progressDialog == null)
+		if (progressDialog == null)
 			progressDialog = new ProgressDialog(ReporterActivity.this);
-		
+
 		postDataSource = new PostDataSource(this);
 		postDataSource.open();
 
@@ -168,7 +175,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 			submit = (Button) findViewById(R.id.submit);
 			submit.setOnClickListener(new View.OnClickListener() {
 				public void onClick(View v) {
-					progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+					progressDialog
+							.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 					progressDialog.setMessage("Отправка файлов...");
 					progressDialog.setCancelable(true);
 					progressDialog.setProgress(0);
@@ -179,11 +187,21 @@ public class ReporterActivity extends Activity implements LocationListener {
 				}
 			});
 		}
+
 		if (add_photo == null) {
 			add_photo = (ImageButton) findViewById(R.id.add_photo);
 			add_photo.setOnClickListener(new View.OnClickListener() {
 				public void onClick(View v) {
 					onAppend();
+				}
+			});
+		}
+
+		if (geo_button == null) {
+			geo_button = (ImageButton) findViewById(R.id.geo_button);
+			geo_button.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View v) {
+					detectGeo();
 				}
 			});
 		}
@@ -250,64 +268,71 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	protected void postClear() {
 		postDataSource.deletePost(post);
-		galleryItems = null;
+		galleryItems = new ArrayList<PostItem>();
 		postItemsSource.deleteAllPostItems(post.getId());
 		post = postDataSource.createPost("", "", null, null);
 		subject.setText("");
 		fullText.setText("");
+		imageAdapter.checkUi();
+	}
+
+	protected void detectGeo() {
+		dialog = ProgressDialog.show(ReporterActivity.this, "",
+				"Устанавливаем связь с космосом...", true);
+		provider = getProvider();
+		if (provider != null) {
+			locationManager.requestLocationUpdates(provider, 400, 1, this);
+			Location location = locationManager.getLastKnownLocation(provider);
+
+			if (location != null) {
+				System.out.println("Provider " + provider
+						+ " has been selected.");
+				post.setGeo_lat(location.getLatitude());
+				post.setGeo_lng(location.getLongitude());
+				Toast.makeText(
+						ReporterActivity.this,
+						"Связь со спутниками установлена, ваши координаты: lat: "
+								+ post.getGeo_lat().toString() + ", lng: "
+								+ post.getGeo_lng().toString(),
+						Toast.LENGTH_SHORT).show();
+				dialog.setMessage("Связь со спутниками установлена, ваши координаты: lat: "
+						+ post.getGeo_lat().toString()
+						+ ", lng: "
+						+ post.getGeo_lng().toString());
+
+			} else {
+				Toast.makeText(ReporterActivity.this,
+						"Не удалось найти ваше местоположение",
+						Toast.LENGTH_SHORT).show();
+			}
+		} else {
+			Toast.makeText(ReporterActivity.this,
+					"Не удалось найти ваше местоположение, включите GPS",
+					Toast.LENGTH_SHORT).show();
+		}
+
+		dialog.dismiss();
 	}
 
 	// data submit
 	protected void onSubmit() {
-		CheckBox add_geo = (CheckBox) findViewById(R.id.add_geo);
-		if (add_geo.isChecked()) {
-			dialog = ProgressDialog.show(ReporterActivity.this, "",
-					"Устанавливаем связь с космосом...", true);
-			provider = getProvider();
-			if (provider != null) {
-				locationManager.requestLocationUpdates(provider, 400, 1, this);
-				Location location = locationManager
-						.getLastKnownLocation(provider);
-
-				if (location != null) {
-					System.out.println("Provider " + provider
-							+ " has been selected.");
-					latitute = location.getLatitude();
-					longitude = location.getLongitude();
-					Toast.makeText(
-							ReporterActivity.this,
-							"Связь со спутниками установлена, ваши координаты: lat: "
-									+ latitute + ", lng: " + longitude,
-							Toast.LENGTH_SHORT).show();
-					dialog.setMessage("Связь со спутниками установлена, ваши координаты: lat: "
-							+ latitute + ", lng: " + longitude);
-
-				} else {
-					Toast.makeText(ReporterActivity.this,
-							"Не удалось найти ваше местоположение",
-							Toast.LENGTH_SHORT).show();
-				}
-			} else {
-				Toast.makeText(ReporterActivity.this,
-						"Не удалось найти ваше местоположение, включите GPS",
-						Toast.LENGTH_SHORT).show();
-			}
-
-			dialog.dismiss();
-		}
-		
 		List<PostItem> prepare = new ArrayList<PostItem>();
-		for (PostItem item : galleryItems){
+		for (PostItem item : galleryItems) {
 			item.setPath(getRealPathFromURI(item.getUri()));
 			prepare.add(item);
 		}
+		postUpdated();
+		
+		
+		post.setUid(Secure.getString(getContext().getContentResolver(), Secure.ANDROID_ID));
 		new sendData().execute();
 	}
-	
-	private void onSubmitEnd(){
-		Toast.makeText(ReporterActivity.this, "Файлы загружены!", Toast.LENGTH_LONG).show();
+
+	private void onSubmitEnd() {
+		Toast.makeText(ReporterActivity.this, "Файлы загружены!",
+				Toast.LENGTH_LONG).show();
 	}
-	
+
 	// select intents for media append
 	protected void onAppend() {
 		final CharSequence[] items = { "Фото из галереи", "Сделать фото",
@@ -596,6 +621,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 	@Override
 	public void onStop() {
 		Log.i("action", "onStop");
+		s.stopSelf();
 		// Suspend remaining UI updates, threads, or processing
 		// that aren’t required when the Activity isn’t visible.
 		// Persist all edits or state changes
@@ -624,8 +650,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 		MenuItem menuClear = menu.add(0, MENU_CLEAR, Menu.NONE,
 				R.string.menu_clear);
-		// MenuItem menuHistory = menu
-		// .add(0, MENU_HISTORY, Menu.NONE, R.string.menu_history);
+		MenuItem menuHistory = menu.add(0, MENU_HISTORY, Menu.NONE,
+				R.string.menu_history);
 
 		menuClear.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem _menuItem) {
@@ -634,25 +660,15 @@ public class ReporterActivity extends Activity implements LocationListener {
 			}
 		});
 		final ReporterActivity self = this;
-		/*
-		 * menuHistory.setOnMenuItemClickListener(new OnMenuItemClickListener()
-		 * { public boolean onMenuItemClick(MenuItem _menuItem) { List<Post>
-		 * posts = postDataSource.getAllPosts(); if(posts.size()>0){
-		 * List<String> listItems = new ArrayList<String>(); for(int r = 0; r <
-		 * posts.size(); r++){ String title = posts.get(r).getTitle(); if(title
-		 * == "" || title == null){ title = "<без темы>"; }
-		 * listItems.add(title); Log.i("menu","added: "+title); } final
-		 * CharSequence[] items = listItems.toArray(new
-		 * CharSequence[listItems.size()]);
-		 * 
-		 * AlertDialog.Builder builder = new AlertDialog.Builder(self);
-		 * builder.setTitle("Выбрать:"); builder.setItems(items, new
-		 * DialogInterface.OnClickListener() { public void
-		 * onClick(DialogInterface dialog, int item) { switch (item) { case 0:
-		 * break; } } }); AlertDialog alert = builder.create(); alert.show(); }
-		 * else { Toast.makeText(self, "История пуста", Toast.LENGTH_SHORT); }
-		 * return true; } });
-		 */
+
+		menuHistory.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+			public boolean onMenuItemClick(MenuItem _menuItem) {
+				mySQLiteHelper.truncate();
+				Toast.makeText(ReporterActivity.this, "db truncated", Toast.LENGTH_SHORT);
+				return true;
+			}
+		});
+
 		return true;
 	}
 
@@ -700,15 +716,22 @@ public class ReporterActivity extends Activity implements LocationListener {
 				Bitmap img = decodeImageFile(item.getUri());
 				if (img != null) {
 					imageView.setImageBitmap(img);
+				} else {
 					imageView
-							.setLayoutParams(new Gallery.LayoutParams(185, 150));
-					imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-					imageView.setAdjustViewBounds(true);
-					imageView.setBackgroundResource(mGalleryItemBackground);
-
-					return imageView;
+							.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);
+					Toast.makeText(
+							ReporterActivity.this,
+							"Один из файлов недоступен, убедитесь что носитель памяти доступен.",
+							Toast.LENGTH_LONG);
 				}
-				break;
+				imageView.setLayoutParams(new Gallery.LayoutParams(185, 150));
+				imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+				imageView.setAdjustViewBounds(true);
+				imageView.setBackgroundResource(mGalleryItemBackground);
+
+				return imageView;
+
+				// break;
 			case TYPE_VIDEO:
 				int fileID = Integer.parseInt(item.getUri()
 						.getLastPathSegment());
@@ -746,44 +769,55 @@ public class ReporterActivity extends Activity implements LocationListener {
 	}
 
 	private Bitmap decodeImageFile(Uri uri) {
+		String path = getRealPathFromURI(uri);
 
-		File f = new File(getRealPathFromURI(uri));
-		// Decode image size
-		BitmapFactory.Options o = new BitmapFactory.Options();
-		o.inJustDecodeBounds = true;
-		try {
-			BitmapFactory.decodeStream(new FileInputStream(f), null, o);
-		} catch (FileNotFoundException e) {
-			Log.e("decodeImageFile", "File not found "
-					+ getRealPathFromURI(uri));
-			e.printStackTrace();
-		}
+		// File f = new File(path);
+		if (path != null) {
+			File f = new File(path);// getContext().getFileStreamPath(path);
+			// Decode image size
+			BitmapFactory.Options o = new BitmapFactory.Options();
+			o.inJustDecodeBounds = true;
+			try {
+				BitmapFactory.decodeStream(new FileInputStream(f), null, o);
+			} catch (FileNotFoundException e) {
+				Log.e("decodeImageFile", "File not found "
+						+ getRealPathFromURI(uri));
+				e.printStackTrace();
+			}
 
-		// Find the correct scale value. It should be the power of 2.
-		int width_tmp = o.outWidth, height_tmp = o.outHeight;
-		int scale = 1;
+			// Find the correct scale value. It should be the power of 2.
+			int width_tmp = o.outWidth, height_tmp = o.outHeight;
+			int scale = 1;
 
-		while (true) {
-			if (width_tmp / 2 < THUMBNAIL_SIZE
-					|| height_tmp / 2 < THUMBNAIL_SIZE)
-				break;
-			width_tmp /= 2;
-			height_tmp /= 2;
-			scale *= 2;
-		}
+			while (true) {
+				if (width_tmp / 2 < THUMBNAIL_SIZE
+						|| height_tmp / 2 < THUMBNAIL_SIZE)
+					break;
+				width_tmp /= 2;
+				height_tmp /= 2;
+				scale *= 2;
+			}
 
-		// Decode with inSampleSize
-		BitmapFactory.Options o2 = new BitmapFactory.Options();
-		o2.inSampleSize = scale;
+			// Decode with inSampleSize
+			BitmapFactory.Options o2 = new BitmapFactory.Options();
+			o2.inSampleSize = scale;
 
-		try {
-			return BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
-		} catch (FileNotFoundException e) {
-			Log.e("decodeImageFile", "File not found");
-			e.printStackTrace();
+			try {
+				return BitmapFactory.decodeStream(new FileInputStream(f), null,
+						o2);
+			} catch (FileNotFoundException e) {
+				Log.e("decodeImageFile", "File not found");
+				e.printStackTrace();
+			}
+		} else {
+			Log.w("decodeImageFile", "File not found");
 		}
 
 		return null;
+	}
+
+	private ContextWrapper getContext() {
+		return ReporterActivity.this;
 	}
 
 	@Override
@@ -807,13 +841,19 @@ public class ReporterActivity extends Activity implements LocationListener {
 				null, // WHERE clause; which rows to return (all rows)
 				null, // WHERE clause selection arguments (none)
 				null); // Order-by clause (ascending by name)
-		int column_index = cursor
-				.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-		cursor.moveToFirst();
+		if (cursor == null)
+			return null;
+		try {
+			int column_index = cursor
+					.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+			cursor.moveToFirst();
+			return cursor.getString(column_index);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
 
-		return cursor.getString(column_index);
 	}
-	
+
 	private ServiceConnection mConnection = new ServiceConnection() {
 
 		public void onServiceConnected(ComponentName className, IBinder binder) {
@@ -826,20 +866,25 @@ public class ReporterActivity extends Activity implements LocationListener {
 			s = null;
 		}
 	};
+
 	void doBindService() {
 		bindService(new Intent(this, SendService.class), mConnection,
 				Context.BIND_AUTO_CREATE);
 	}
+
 	private class sendData extends AsyncTask<String, Void, Void> {
 		@Override
-	     protected Void doInBackground(String... params) {
-	    	 if (s != null)
-	 			s.sendFiles();
-			return null;
-	     }
-			@Override
-			protected void onPostExecute(Void result) {
-				onSubmitEnd();
+		protected Void doInBackground(String... params) {
+			if (s != null) {
+				int id = s.sendMeta(post);
+				s.sendFiles(id);
 			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			onSubmitEnd();
+		}
 	}
 }

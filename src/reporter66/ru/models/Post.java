@@ -8,9 +8,19 @@ public class Post {
 	private long id;
 	private String title;
 	private String text;
-	private Float geo_lat;
-	private Float geo_lng;
+	private Double geo_lat;
+	private Double geo_lng;
 	private List<PostItem> galleryItems;
+	private long external_id;
+	private String uid;
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
 
 	// Will be used by the ArrayAdapter in the ListView
 	@Override
@@ -42,19 +52,19 @@ public class Post {
 		this.text = text;
 	}
 
-	public Float getGeo_lat() {
+	public Double getGeo_lat() {
 		return geo_lat;
 	}
 
-	public void setGeo_lat(Float geo_lat) {
+	public void setGeo_lat(Double geo_lat) {
 		this.geo_lat = geo_lat;
 	}
 
-	public Float getGeo_lng() {
+	public Double getGeo_lng() {
 		return geo_lng;
 	}
 
-	public void setGeo_lng(Float geo_lng) {
+	public void setGeo_lng(Double geo_lng) {
 		this.geo_lng = geo_lng;
 	}
 
@@ -66,4 +76,11 @@ public class Post {
 		this.galleryItems = galleryItems;
 	}
 	
+	public long getExternal_id() {
+		return external_id;
+	}
+
+	public void setExternal_id(long external_id) {
+		this.external_id = external_id;
+	}
 }

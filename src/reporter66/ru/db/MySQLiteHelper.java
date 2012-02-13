@@ -33,6 +33,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 			+ " integer primary key autoincrement, " + COLUMN_URI
 			+ " text not null, " + COLUMN_TYPE + " INTEGER not null, "
 			+ COLUMN_POST_ID + " INTEGER not null" + ");";
+	
 
 	public MySQLiteHelper(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -42,6 +43,13 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 	public void onCreate(SQLiteDatabase database) {
 		database.execSQL(DATABASE_CREATE_POSTS);
 		database.execSQL(DATABASE_CREATE_POST_ITEMS);
+	}
+	
+	public void truncate() {
+		SQLiteDatabase database = this.getWritableDatabase();
+		database.execSQL("DROP TABLE IF EXISTS " + TABLE_POSTS);
+		database.execSQL("DROP TABLE IF EXISTS " + TABLE_POST_ITEMS);
+		onCreate(database);
 	}
 
 	@Override
