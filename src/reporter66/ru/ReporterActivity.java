@@ -38,11 +38,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.provider.Settings.Secure;
-import android.telephony.TelephonyManager;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -338,7 +334,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 		final CharSequence[] items = { "Фото из галереи", "Сделать фото",
 				"Видео из галереи", "Снять видео", "Аудио" };
 
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		AlertDialog.Builder builder = new AlertDialog.Builder(ReporterActivity.this);
 		builder.setTitle("Добавить:");
 		builder.setItems(items, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int item) {
@@ -621,7 +617,6 @@ public class ReporterActivity extends Activity implements LocationListener {
 	@Override
 	public void onStop() {
 		Log.i("action", "onStop");
-		s.stopSelf();
 		// Suspend remaining UI updates, threads, or processing
 		// that aren’t required when the Activity isn’t visible.
 		// Persist all edits or state changes
@@ -633,6 +628,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 	@Override
 	public void onDestroy() {
 		Log.i("action", "onDestroy");
+		unbindService(mConnection);
+		s.stopSelf();
 		postUpdated();
 		postDataSource.close();
 		postItemsSource.close();

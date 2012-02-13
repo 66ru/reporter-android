@@ -84,7 +84,7 @@ public class SendService extends Service {
 				StringBuffer data = new StringBuffer();
 				int c;
 				while ((c = isr.read()) != -1) {
-					data.append((char) c);
+					if(c>0) data.append((char) c);
 				}
 
 				String resultString = new String(data.toString());
@@ -95,10 +95,10 @@ public class SendService extends Service {
 			}
 
 		} catch (MalformedURLException e) {
-			Log.e(TAG, e.getMessage());
+			Log.e(TAG, "NetDisconeeted");
 			e.printStackTrace();
 		} catch (IOException e) {
-			Log.e(TAG, e.getMessage());
+			Log.e(TAG, "NetDisconeeted ");
 			e.printStackTrace();
 		}
 		return -1;
@@ -186,7 +186,7 @@ public class SendService extends Service {
 			connection.setRequestMethod("POST");
 
 			connection.setRequestProperty("Connection", "Keep-Alive");
-			connection.setFixedLengthStreamingMode(20*1024*1024);
+			//connection.setFixedLengthStreamingMode(20*1024*1024);
 
 			// file send
 
@@ -241,12 +241,14 @@ public class SendService extends Service {
 			fileInputStream.close();
 			outputStream.flush();
 			outputStream.close();
-			connection.disconnect();
+			
 			// Responses from the server (code and message)
 			Log.i("response", connection.getResponseCode() + "");
 			Log.i("response", connection.getResponseMessage());
 
 			response = connection.getResponseCode() + "";
+
+			connection.disconnect();
 			Log.d(TAG, "uploadFile successfull");
 		} catch (MalformedURLException e) {
 			Log.e(TAG, "NetDisconeeted");

@@ -13,15 +13,6 @@ public class Post {
 	private List<PostItem> galleryItems;
 	private long external_id;
 	private String uid;
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
 	// Will be used by the ArrayAdapter in the ListView
 	@Override
 	public String toString() {
@@ -82,5 +73,13 @@ public class Post {
 
 	public void setExternal_id(long external_id) {
 		this.external_id = external_id;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
 	}
 }
