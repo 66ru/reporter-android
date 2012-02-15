@@ -17,9 +17,10 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 	public static final String COLUMN_POST_ID = "post_id";
 	public static final String COLUMN_URI = "uri";
 	public static final String COLUMN_TYPE = "type";
+	public static final String COLUMN_EXTERNAL_ID = "external_id";
 
 	private static final String DATABASE_NAME = "posts.db";
-	private static final int DATABASE_VERSION = 2;
+	private static final int DATABASE_VERSION = 3;
 
 	// Database creation sql statement
 	private static final String DATABASE_CREATE_POSTS = "create table "
@@ -27,12 +28,13 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 			+ " integer primary key autoincrement, " + COLUMN_TITLE
 			+ " text not null, " + COLUMN_TEXT + " text not null, "
 			+ COLUMN_GEO_LAT + " REAL, " + COLUMN_GEO_LNG
-			+ " REAL" + ");";
+			+ " REAL, " + COLUMN_EXTERNAL_ID + " integer);";
 	private static final String DATABASE_CREATE_POST_ITEMS = "create table "
 			+ TABLE_POST_ITEMS + "( " + COLUMN_ID
 			+ " integer primary key autoincrement, " + COLUMN_URI
 			+ " text not null, " + COLUMN_TYPE + " INTEGER not null, "
-			+ COLUMN_POST_ID + " INTEGER not null" + ");";
+			+ COLUMN_POST_ID + " INTEGER not null, "
+			+ COLUMN_EXTERNAL_ID + " integer);";
 	
 
 	public MySQLiteHelper(Context context) {

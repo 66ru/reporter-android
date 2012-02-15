@@ -47,10 +47,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Gallery;
 import android.widget.ImageButton;
@@ -70,13 +68,11 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private static final int INTENT_VIDEO_CAPTURE = 12;
 
 	private static final int INTENT_AUDIO_PICK = 21;
-	private static final int INTENT_AUDIO_CAPTURE = 22;
+//	private static final int INTENT_AUDIO_CAPTURE = 22;
 
 	/* geo */
 	private LocationManager locationManager;
 	private String provider;
-	private double longitude;
-	private double latitute;
 
 	/* elements */
 	private Button submit;
@@ -101,8 +97,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 	private static final int TYPE_AUDIO = 2;
 
 	/* db */
-	private PostDataSource postDataSource;
-	private PostItemDataSource postItemsSource;
+	public static PostDataSource postDataSource;
+	public static PostItemDataSource postItemsSource;
 	private MySQLiteHelper mySQLiteHelper = new MySQLiteHelper(ReporterActivity.this);
 
 	/* models */
@@ -176,7 +172,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 					progressDialog.setMessage("Отправка файлов...");
 					progressDialog.setCancelable(true);
 					progressDialog.setProgress(0);
-					progressDialog.setMax(ReporterActivity.galleryItems.size());
+					progressDialog.setMax(100);
 					progressDialog.setOwnerActivity(ReporterActivity.this);
 					progressDialog.show();
 					onSubmit();
@@ -603,8 +599,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 	@Override
 	public void onLocationChanged(Location location) {
 		Log.i("action", "onLocationChanged");
-		latitute = location.getLatitude();
-		longitude = location.getLongitude();
+		//post.setGeo_lat(location.getLatitude());
+		//post.setGeo_lng(location.getLongitude());
 	}
 
 	@Override
@@ -640,6 +636,7 @@ public class ReporterActivity extends Activity implements LocationListener {
 
 	static final private int MENU_CLEAR = Menu.FIRST;
 	static final private int MENU_HISTORY = Menu.FIRST + 1;
+	static final private int MENU_TRUNCATE = Menu.FIRST + 2;
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -649,6 +646,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 				R.string.menu_clear);
 		MenuItem menuHistory = menu.add(0, MENU_HISTORY, Menu.NONE,
 				R.string.menu_history);
+		MenuItem menuDrop = menu.add(0, MENU_TRUNCATE, Menu.NONE,
+				"TRUNCATE");
 
 		menuClear.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem _menuItem) {
@@ -656,9 +655,17 @@ public class ReporterActivity extends Activity implements LocationListener {
 				return true;
 			}
 		});
-		final ReporterActivity self = this;
-
+		
 		menuHistory.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+			public boolean onMenuItemClick(MenuItem _menuItem) {
+				Intent historyIntent = new Intent(ReporterActivity.this, HistoryActivity.class);
+				ReporterActivity.this.startActivity(historyIntent);
+				return true;
+			}
+		});
+		
+		final ReporterActivity self = this;
+		menuDrop.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem _menuItem) {
 				mySQLiteHelper.truncate();
 				Toast.makeText(ReporterActivity.this, "db truncated", Toast.LENGTH_SHORT);
@@ -874,6 +881,8 @@ public class ReporterActivity extends Activity implements LocationListener {
 		protected Void doInBackground(String... params) {
 			if (s != null) {
 				int id = s.sendMeta(post);
+				post.setExternal_id(id);
+				postDataSource.savePost(post);
 				s.sendFiles(id);
 			}
 			return null;

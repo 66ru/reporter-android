@@ -3,7 +3,6 @@ package reporter66.ru.db;
 import java.util.ArrayList;
 import java.util.List;
 
-import reporter66.ru.models.Post;
 import reporter66.ru.models.PostItem;
 
 import android.content.ContentValues;
@@ -21,7 +20,7 @@ public class PostItemDataSource {
 	private MySQLiteHelper dbHelper;
 	private String[] allColumns = { MySQLiteHelper.COLUMN_ID,
 			MySQLiteHelper.COLUMN_URI, MySQLiteHelper.COLUMN_TYPE,
-			MySQLiteHelper.COLUMN_POST_ID, };
+			MySQLiteHelper.COLUMN_POST_ID, MySQLiteHelper.COLUMN_EXTERNAL_ID};
 
 	public PostItemDataSource(Context context) {
 		dbHelper = new MySQLiteHelper(context);
@@ -40,6 +39,7 @@ public class PostItemDataSource {
 		values.put(MySQLiteHelper.COLUMN_URI, uri.toString());
 		values.put(MySQLiteHelper.COLUMN_TYPE, type);
 		values.put(MySQLiteHelper.COLUMN_POST_ID, post_id);
+		values.put(MySQLiteHelper.COLUMN_EXTERNAL_ID, -1);
 
 		long insertId = database.insert(MySQLiteHelper.TABLE_POST_ITEMS, null,
 				values);
@@ -76,7 +76,21 @@ public class PostItemDataSource {
 		cursor.close();
 		return postItems;
 	}
+	
+	public void savePostItem(PostItem item) {
+		long id = item.getId();
+		ContentValues values = new ContentValues();
+		values.put(MySQLiteHelper.COLUMN_URI, item.getUri().toString());
+		values.put(MySQLiteHelper.COLUMN_TYPE, item.getType());
+		values.put(MySQLiteHelper.COLUMN_POST_ID, item.getPost_id());
+		values.put(MySQLiteHelper.COLUMN_EXTERNAL_ID, item.getExternal_id());
 
+		database.update(MySQLiteHelper.TABLE_POST_ITEMS, values,
+				MySQLiteHelper.COLUMN_ID + " = " + id, null);
+
+		Log.i("postItem", "saved with id: " + id);
+	}
+	
 	public void deleteAllPostItems(long id) {
 		database.delete(MySQLiteHelper.TABLE_POST_ITEMS,
 				MySQLiteHelper.COLUMN_POST_ID + " = " + id, null);
@@ -88,6 +102,7 @@ public class PostItemDataSource {
 		postItem.setUri(Uri.parse(cursor.getString(1)));
 		postItem.setType(cursor.getInt(2));
 		postItem.setPost_id(cursor.getLong(3));
+		postItem.setExternal_id(cursor.getLong(4));
 		return postItem;
 	}
 }

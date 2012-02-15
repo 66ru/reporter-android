@@ -8,6 +8,7 @@ public class PostItem {
 	private int type;
 	private long post_id;
 	private String path;
+	private long external_id = -1;
 	
 	public long getId() {
 		return id;
@@ -40,6 +41,21 @@ public class PostItem {
 	public void setPath(String path) {
 		this.path = path;
 	}
+	
+	public long getExternal_id() {
+		return external_id;
+	}
+	
+	public void setExternal_id(long external_id) {
+		this.external_id = external_id;
+	}
+	
+	public boolean isSended(){
+		if(this.external_id > -1)
+			return true;
+		return false;
+	}
+	
 	@Override
 	public String toString() {
 		return uri.toString();

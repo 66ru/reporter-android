@@ -20,7 +20,7 @@ public class PostDataSource {
 	private MySQLiteHelper dbHelper;
 	private String[] allColumns = { MySQLiteHelper.COLUMN_ID,
 			MySQLiteHelper.COLUMN_TITLE, MySQLiteHelper.COLUMN_TEXT,
-			MySQLiteHelper.COLUMN_GEO_LAT, MySQLiteHelper.COLUMN_GEO_LNG, };
+			MySQLiteHelper.COLUMN_GEO_LAT, MySQLiteHelper.COLUMN_GEO_LNG, MySQLiteHelper.COLUMN_EXTERNAL_ID};
 
 	public PostDataSource(Context context) {
 		dbHelper = new MySQLiteHelper(context);
@@ -41,6 +41,7 @@ public class PostDataSource {
 		values.put(MySQLiteHelper.COLUMN_TEXT, text);
 		values.put(MySQLiteHelper.COLUMN_GEO_LAT, geo_lat);
 		values.put(MySQLiteHelper.COLUMN_GEO_LNG, geo_lng);
+		values.put(MySQLiteHelper.COLUMN_EXTERNAL_ID, -1);
 
 		long insertId = database.insert(MySQLiteHelper.TABLE_POSTS, null,
 				values);
@@ -68,6 +69,7 @@ public class PostDataSource {
 		values.put(MySQLiteHelper.COLUMN_TEXT, post.getText());
 		values.put(MySQLiteHelper.COLUMN_GEO_LAT, post.getGeo_lat());
 		values.put(MySQLiteHelper.COLUMN_GEO_LNG, post.getGeo_lng());
+		values.put(MySQLiteHelper.COLUMN_EXTERNAL_ID, post.getExternal_id());
 
 		database.update(MySQLiteHelper.TABLE_POSTS, values,
 				MySQLiteHelper.COLUMN_ID + " = " + id, null);
@@ -112,6 +114,7 @@ public class PostDataSource {
 		post.setText(cursor.getString(2));
 		post.setGeo_lat(cursor.getDouble(3));
 		post.setGeo_lng(cursor.getDouble(4));
+		post.setExternal_id(cursor.getLong(5));
 		return post;
 	}
 }

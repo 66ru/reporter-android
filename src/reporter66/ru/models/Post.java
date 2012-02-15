@@ -2,8 +2,6 @@ package reporter66.ru.models;
 
 import java.util.List;
 
-import reporter66.ru.db.PostDataSource;
-
 public class Post {
 	private long id;
 	private String title;
@@ -11,8 +9,8 @@ public class Post {
 	private Double geo_lat;
 	private Double geo_lng;
 	private List<PostItem> galleryItems;
-	private long external_id;
 	private String uid;
+	private long external_id = -1;
 	// Will be used by the ArrayAdapter in the ListView
 	@Override
 	public String toString() {
@@ -73,6 +71,12 @@ public class Post {
 
 	public void setExternal_id(long external_id) {
 		this.external_id = external_id;
+	}
+	
+	public boolean isSended(){
+		if(this.external_id > -1)
+			return true;
+		return false;
 	}
 
 	public String getUid() {

@@ -46,6 +46,7 @@
                 <data android:mimeType="text/*" />
             </intent-filter>
         </activity>
+        <activity android:name="HistoryActivity" />
         
         <service android:name=".net.SendService"></service>
 

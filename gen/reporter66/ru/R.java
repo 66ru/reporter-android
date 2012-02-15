@@ -26,13 +26,18 @@ public final class R {
         public static final int fullText=0x7f070002;
         public static final int gallery=0x7f070004;
         public static final int geo_button=0x7f070007;
+        public static final int label=0x7f070009;
         public static final int linearLayout1=0x7f070005;
         public static final int subject=0x7f070001;
         public static final int submit=0x7f070006;
+        public static final int text=0x7f07000b;
         public static final int textView1=0x7f070000;
+        public static final int title=0x7f07000a;
     }
     public static final class layout {
         public static final int form=0x7f030000;
+        public static final int history_list=0x7f030001;
+        public static final int history_list_item=0x7f030002;
     }
     public static final class string {
         public static final int add_geo=0x7f040008;

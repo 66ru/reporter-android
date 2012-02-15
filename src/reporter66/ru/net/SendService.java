@@ -1,6 +1,5 @@
 package reporter66.ru.net;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,8 +54,7 @@ public class SendService extends Service {
 					+ URLEncoder.encode(post.getGeo_lat().toString(), "UTF-8")
 					+ "&geo_lng="
 					+ URLEncoder.encode(post.getGeo_lng().toString(), "UTF-8")
-					+ "&uid="
-					+ URLEncoder.encode(post.getUid(), "UTF-8");
+					+ "&uid=" + URLEncoder.encode(post.getUid(), "UTF-8");
 
 			connection = (HttpURLConnection) url.openConnection();
 			connection.setUseCaches(false);
@@ -84,12 +82,13 @@ public class SendService extends Service {
 				StringBuffer data = new StringBuffer();
 				int c;
 				while ((c = isr.read()) != -1) {
-					if(c>0) data.append((char) c);
+					if (c > 0)
+						data.append((char) c);
 				}
 
 				String resultString = new String(data.toString());
 
-				Log.i(TAG, "Rsponse: " + resultString);
+				Log.i(TAG, "Response: " + resultString);
 
 				return Integer.parseInt(resultString);
 			}
@@ -110,12 +109,15 @@ public class SendService extends Service {
 		Log.i(TAG, "Sending " + ReporterActivity.galleryItems.size()
 				+ " files to server");
 
+		ReporterActivity.progressDialog.setProgress(0);
 		for (PostItem item : ReporterActivity.galleryItems) {
-			ReporterActivity.progressDialog.setProgress(i);
 			i++;
 			Log.i(TAG, "Processing file " + i + " of total "
 					+ ReporterActivity.galleryItems.size());
-			uploadFile(item, id);
+			if (item.isSended()) {
+				Log.i(TAG, "File already sent, skipping.");
+			} else
+				uploadFile(item, id, i);
 		}
 		ReporterActivity.progressDialog.dismiss();
 	}
@@ -156,14 +158,11 @@ public class SendService extends Service {
 		}
 	}
 
-	public void uploadFile(PostItem item, int id) {
-		Log.i(TAG, item.getId() + " >> " + id);
-		String response = null;
+	public void uploadFile(PostItem item, int id, int current) {
 
+		Log.i(TAG, item.getId() + " >> " + id);
 		HttpURLConnection connection = null;
 		DataOutputStream outputStream = null;
-		DataInputStream inputStream = null;
-
 		String pathToOurFile = item.getPath();
 
 		int bytesRead, bytesAvailable, bufferSize;
@@ -172,6 +171,7 @@ public class SendService extends Service {
 		try {
 			FileInputStream fileInputStream = new FileInputStream(new File(
 					pathToOurFile));
+			int totalBytes = bytesAvailable = fileInputStream.available();
 
 			java.net.URL url = new java.net.URL(urlServer);
 			connection = null;
@@ -182,81 +182,125 @@ public class SendService extends Service {
 			connection.setDoOutput(true);
 			connection.setUseCaches(false);
 
+			StringBuilder preData = new StringBuilder();
 			// Enable POST method
 			connection.setRequestMethod("POST");
 
 			connection.setRequestProperty("Connection", "Keep-Alive");
-			//connection.setFixedLengthStreamingMode(20*1024*1024);
-
-			// file send
-
 			connection.setRequestProperty("Content-Type",
 					"multipart/form-data;boundary=" + boundary);
 
+			preData.append(twoHyphens + boundary + lineEnd);
+			preData.append("Content-Disposition: form-data; name=\"uploadedfile\";filename=\""
+					+ pathToOurFile + "\"" + lineEnd);
+			preData.append(lineEnd);
+
+			StringBuilder postData = new StringBuilder();
+
+			postData.append(lineEnd);
+			postData.append(twoHyphens + boundary + twoHyphens + lineEnd);
+			postData.append("\r\n" + "--" + boundary + "\r\n");
+
+			// additional params
+
+			postData.append("content-disposition: form-data; name=\"file_id\"\r\n\r\n");
+			postData.append(item.getId() + "");
+			postData.append("\r\n" + "--" + boundary + "\r\n");
+
+			postData.append("content-disposition: form-data; name=\"id\"\r\n\r\n");
+			postData.append(id + "");
+			postData.append("\r\n" + "--" + boundary + "\r\n");
+
+			postData.append("content-disposition: form-data; name=\"type\"\r\n\r\n");
+			postData.append(item.getType() + "");
+			postData.append("\r\n" + "--" + boundary + "\r\n");
+
+			Log.i(TAG, (preData.toString().getBytes().length + totalBytes)
+					+ " - request size");
+
+			connection.setFixedLengthStreamingMode(totalBytes
+					+ preData.toString().getBytes().length
+					+ postData.toString().getBytes().length);
+
 			outputStream = new DataOutputStream(connection.getOutputStream());
+			outputStream.writeBytes(preData.toString());
 
-			outputStream.writeBytes(twoHyphens + boundary + lineEnd);
-			outputStream
-					.writeBytes("Content-Disposition: form-data; name=\"uploadedfile\";filename=\""
-							+ pathToOurFile + "\"" + lineEnd);
-			outputStream.writeBytes(lineEnd);
-
-			bytesAvailable = fileInputStream.available();
 			bufferSize = Math.min(bytesAvailable, maxBufferSize);
 			buffer = new byte[bufferSize];
 
 			// Read file
 			bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+			int bytesWritten = bufferSize;
 			Log.d(TAG, "file read start");
 			while (bytesRead > 0) {
 				outputStream.write(buffer, 0, bufferSize);
+				// outputStream.flush();
 				bytesAvailable = fileInputStream.available();
 				bufferSize = Math.min(bytesAvailable, maxBufferSize);
 				bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+				bytesWritten += bufferSize;
+				int delta = totalBytes - bytesWritten;
+				if (delta > 0) {
+					float progress = ((float) bytesWritten / totalBytes)
+							* 100
+							/ ReporterActivity.galleryItems.size()
+							+ (100 / ReporterActivity.galleryItems.size() * (current - 1));
+					Log.i(TAG, "" + progress);
+					ReporterActivity.progressDialog.setProgress((int) progress);
+				}
 			}
 			Log.d(TAG, "file read end");
-
-			outputStream.writeBytes(lineEnd);
-			outputStream.writeBytes(twoHyphens + boundary + twoHyphens
-					+ lineEnd);
-			outputStream.writeBytes("\r\n" + "--" + boundary + "\r\n");
-
-			// additional params
-
-			outputStream
-					.writeBytes("content-disposition: form-data; name=\"file_id\"\r\n\r\n");
-			outputStream.writeBytes(item.getId() + "");
-			outputStream.writeBytes("\r\n" + "--" + boundary + "\r\n");
-
-			outputStream
-					.writeBytes("content-disposition: form-data; name=\"id\"\r\n\r\n");
-			outputStream.writeBytes(id + "");
-			outputStream.writeBytes("\r\n" + "--" + boundary + "\r\n");
-
-			outputStream
-					.writeBytes("content-disposition: form-data; name=\"type\"\r\n\r\n");
-			outputStream.writeBytes(item.getType() + "");
-			outputStream.writeBytes("\r\n" + "--" + boundary + "\r\n");
+			outputStream.writeBytes(postData.toString());
 
 			fileInputStream.close();
 			outputStream.flush();
 			outputStream.close();
-			
+
 			// Responses from the server (code and message)
 			Log.i("response", connection.getResponseCode() + "");
 			Log.i("response", connection.getResponseMessage());
 
-			response = connection.getResponseCode() + "";
+			int responseCode = connection.getResponseCode();
+			if (responseCode == 200) {
+
+				InputStream in = connection.getInputStream();
+
+				InputStreamReader isr = new InputStreamReader(in, "UTF-8");
+
+				StringBuffer data = new StringBuffer();
+				int c;
+				while ((c = isr.read()) != -1) {
+					if (c > 0)
+						data.append((char) c);
+				}
+
+				String resultString = new String(data.toString());
+				Log.i(TAG, "Response: " + resultString);
+
+				if (resultString != "") {
+					long resultId = Long.parseLong(resultString);
+
+					if (resultId > -1) {
+						Log.i(TAG, "Send successfull: " + resultId);
+						item.setExternal_id(resultId);
+						ReporterActivity.postItemsSource.savePostItem(item);
+					}
+				} else {
+					Log.i(TAG, "Send failed. Server havn't return any id.");
+				}
+			}
 
 			connection.disconnect();
 			Log.d(TAG, "uploadFile successfull");
 		} catch (MalformedURLException e) {
+
 			Log.e(TAG, "NetDisconeeted");
 			e.printStackTrace();
 		} catch (IOException e) {
 			Log.e(TAG, "NetDisconeeted");
 			e.printStackTrace();
 		}
+
 	}
 
 	@Override
